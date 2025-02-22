@@ -19,18 +19,7 @@ supervisor = RobstrideActuator(ports=['/dev/ttyUSB0'], py_actuators_config=[
     (3, RobstrideActuatorConfig(1)),    # J3
     ])
 
-config_req = RobstrideConfigureRequest(
-        actuator_id=1,
-        kp=None,             # Use default or specific values if needed
-        kd=None,
-        max_torque=None,
-        torque_enabled=None,
-        zero_position=True,
-        new_actuator_id=None
-    )
-    # Send the configuration request to zero the actuator
-success = supervisor.configure_actuator(config_req)
-print(success)
+
 supervisor.run_main_loop(1)
 
 # Startup sequence
@@ -74,7 +63,7 @@ motor_ids = [1, 7, 3]
 data = {motor_id: {"time": [], "position": [], "velocity": [], "torque": [], "pos_ref":[], "vel_ref":[], "raw_torque":[], "vel_pred":[], "pos_pred":[]} for motor_id in motor_ids}
 
 # Trajectorty Generation
-def trajectory(xo, xf, T, time):
+def cubic_trajectory(xo, xf, T, time):
     if time < T:
         c0 = xo
         c2 = 3*(xf - xo)/pow(T,2)
@@ -105,7 +94,7 @@ def control_thread():
             supervisor.disable(3)
             break
         # Get trajectory references
-        pos_ref, vel_ref = trajectory(initial_pos, setpoint, move_time, elapsed)
+        pos_ref, vel_ref = cubic_trajectory(initial_pos, setpoint, move_time, elapsed)
         # Get motor state
         state = supervisor.get_actuators_state([1])
         if state:
@@ -117,11 +106,9 @@ def control_thread():
             data[1]["raw_torque"].append(cmd_trq)
             # Update Estimator 
             xhat = Ad @ xhat + Bd * cmd_trq - L * (Cd @ xhat - pos)
-            #xhat = xhat + T*(A @ xhat + B * cmd_trq - L @ (C @ xhat - pos))
             #Position Limits
             if abs(pos) > 3.1:
                 cmd_trq = 0
-            # cmd_trq = 0 # UNCOMMMMEWMWMMRNWRNRNRN 
             # Send out command
             supervisor.command_actuators(
                 [RobstrideActuatorCommand(actuator_id=1, position=0, velocity=0.0, torque=cmd_trq)]
@@ -151,7 +138,7 @@ def plot_trajectory(xf, T, num_points=100):
     velocities = []
     
     for t in times:
-        pos, vel = trajectory(xf, T, t)
+        pos, vel = cubic_trajectory(xf, T, t)
         positions.append(pos)
         velocities.append(vel)
     
