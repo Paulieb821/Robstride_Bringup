@@ -3,7 +3,6 @@ import math
 import time
 import os
 import threading
- 
 from actuator import RobstrideActuator, RobstrideActuatorConfig, RobstrideActuatorCommand
 
 # Cleanup
@@ -25,16 +24,21 @@ def monitor_thread():
 
     loop_start = time.time()
     while True:
+        state = supervisor.get_actuators_state([1])
+        if state:
+            pos = math.radians(state[0].position)
+            print("Motor 1 Position:", round(pos, 2))
 
-        state = supervisor.get_actuators_state([1,7,3])
-        if state and len(state)==3:
-            print("J1:", round(state[0].position), "J2:", round(state[1].position), "J3:", round(state[2].position))
-        else:
-            if state:
-                if len(state) == 1:
-                    print("Failed. Working Motors: ", state[0].actuator_id)
-                if len(state) == 2:
-                    print("Failed. Working Motors: ", state[0].actuator_id, state[1].actuator_id)
+        
+        # state = supervisor.get_actuators_state([1,7,3])
+        # if state and len(state)==3:
+        #     print("J1:", round(state[0].position), "J2:", round(state[1].position), "J3:", round(state[2].position))
+        # else:
+        #     if state:
+        #         if len(state) == 1:
+        #             print("Failed. Working Motors: ", state[0].actuator_id)
+        #         if len(state) == 2:
+        #             print("Failed. Working Motors: ", state[0].actuator_id, state[1].actuator_id)
         
         time.sleep(0.1)
 
