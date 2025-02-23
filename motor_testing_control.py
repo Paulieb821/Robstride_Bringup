@@ -54,13 +54,13 @@ lambda_val = 15
 T = 0.02
 
 # DT Control Parameters
-K, L, Ad, Bd, Cd, A, B, C = dt_gains(lambda_val, T, b1, b0, a1, a0)
+K, L, Ad, Bd, Cd = dt_gains(lambda_val, T, b1, b0, a1, a0)
 K = K[0]
 L = L[0]
 
 # Motors and Logging
 motor_ids = [1, 7, 3]
-data = {motor_id: {"time": [], "position": [], "velocity": [], "torque": [], "pos_ref":[], "vel_ref":[], "raw_torque":[], "vel_pred":[], "pos_pred":[]} for motor_id in motor_ids}
+data = {motor_id: {"time": [], "position": [], "velocity": [], "torque": [], "pos_ref":[], "vel_ref":[], "vel_pred":[], "pos_pred":[]} for motor_id in motor_ids}
 
 # Trajectorty Generation
 def cubic_trajectory(xo, xf, T, time):
@@ -72,8 +72,27 @@ def cubic_trajectory(xo, xf, T, time):
     else:
         return (xf, 0)
 
+def quintic_trajectory(xo, xf, T, time):
+    # Calculate the coefficients for the quintic polynomial
+    a0 = xo
+    a1 = 0  # initial velocity is 0
+    a2 = 0  # initial acceleration is 0
+    a3 = (10 * (xf - xo)) / (T ** 3)
+    a4 = (-15 * (xf - xo)) / (T ** 4)
+    a5 = (6 * (xf - xo)) / (T ** 5)
+    
+    if time < T:
+        # Compute position and velocity at a given time
+        position = a0 + a1 * time + a2 * time**2 + a3 * time**3 + a4 * time**4 + a5 * time**5
+        velocity = a1 + 2 * a2 * time + 3 * a3 * time**2 + 4 * a4 * time**3 + 5 * a5 * time**4
+        return position, velocity
+    else:
+        # At the final time, return the final position and velocity = 0
+        return xf, 0
+
+
 # Misc
-max_time = move_time + 2
+max_time = move_time + 3
 failure_count = 0
 
 # Main Control Loop
@@ -94,7 +113,9 @@ def control_thread():
             supervisor.disable(3)
             break
         # Get trajectory references
-        pos_ref, vel_ref = cubic_trajectory(initial_pos, setpoint, move_time, elapsed)
+        pos_ref, vel_ref = quintic_trajectory(initial_pos, setpoint, move_time, elapsed)
+        #pos_ref = initial_pos
+        #vel_ref = initial_vel
         # Get motor state
         state = supervisor.get_actuators_state([1])
         if state:
@@ -103,7 +124,6 @@ def control_thread():
             vel = math.radians(state[0].velocity)
             # Calculate torque using PD controller
             cmd_trq = K[0]*(pos_ref-xhat[0,0]) + K[1]*(vel_ref-xhat[1,0])
-            data[1]["raw_torque"].append(cmd_trq)
             # Update Estimator 
             xhat = Ad @ xhat + Bd * cmd_trq - L * (Cd @ xhat - pos)
             #Position Limits
@@ -124,9 +144,9 @@ def control_thread():
         else:
             failure_count += 1
         elapsed_end = time.time() - start_time
-        t_end_of_program = elapsed_end - elapsed
+        cycle_time = elapsed_end - elapsed
 
-        time.sleep(0.019 - t_end_of_program)
+        time.sleep(0.019 - cycle_time)
 
 control = threading.Thread(target=control_thread)
 control.start() 
@@ -138,7 +158,7 @@ def plot_trajectory(xf, T, num_points=100):
     velocities = []
     
     for t in times:
-        pos, vel = cubic_trajectory(xf, T, t)
+        pos, vel = quintic_trajectory(xf, T, t)
         positions.append(pos)
         velocities.append(vel)
     
