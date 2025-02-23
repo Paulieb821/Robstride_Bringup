@@ -6,7 +6,7 @@ import os
 import threading
 import matplotlib.pyplot as plt
 import numpy as np
-from DT_gain_calculator import dt_gains
+from PID_gain_calculator import pid_gains
 from actuator import RobstrideActuator, RobstrideActuatorConfig, RobstrideActuatorCommand, RobstrideConfigureRequest
 
 # Cleanup
@@ -54,7 +54,7 @@ lambda_val = 15
 T = 0.02
 
 # DT Control Parameters
-K, L, Ad, Bd, Cd = dt_gains(lambda_val, T, b1, b0, a1, a0)
+K, L, Ad, Bd, Cd = pid_gains(lambda_val, T, b1, b0, a1, a0)
 K = K[0]
 L = L[0]
 
@@ -101,6 +101,8 @@ def control_thread():
     start_time = time.time()
     # State Estimator setup
     xhat = np.array([[initial_pos], [initial_vel]])
+    # Integrator setup
+    sigma = 0
     # Control loop
     while True:
         # Get elapsed time and check for shutdown
@@ -114,8 +116,6 @@ def control_thread():
             break
         # Get trajectory references
         pos_ref, vel_ref = quintic_trajectory(initial_pos, setpoint, move_time, elapsed)
-        #pos_ref = initial_pos
-        #vel_ref = initial_vel
         # Get motor state
         state = supervisor.get_actuators_state([1])
         if state:
@@ -123,9 +123,10 @@ def control_thread():
             pos = math.radians(state[0].position)
             vel = math.radians(state[0].velocity)
             # Calculate torque using PD controller
-            cmd_trq = K[0]*(pos_ref-xhat[0,0]) + K[1]*(vel_ref-xhat[1,0])
-            # Update Estimator 
+            cmd_trq = K[0]*(pos_ref-xhat[0,0]) + K[1]*(vel_ref-xhat[1,0]) - K[2]*sigma
+            # Update Estimator and Integrator
             xhat = Ad @ xhat + Bd * cmd_trq - L * (Cd @ xhat - pos)
+            sigma = sigma + T*(pos - pos_ref)
             #Position Limits
             if abs(pos) > 3.1:
                 cmd_trq = 0

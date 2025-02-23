@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.linalg import inv
-from DT_gain_calculator import dt_gains
+from PID_gain_calculator import pid_gains
 
 # Poles and Time Step
 lambda_val = 15
@@ -25,7 +25,7 @@ B = Trans @ B
 C = C @ inv(Trans)
 
 # DT Control Parameters
-K, L, Ad, Bd, Cd = dt_gains(lambda_val, T, b1, b0, a1, a0)
+K, L, Ad, Bd, Cd = pid_gains(lambda_val, T, b1*0.5, b0*2.3, a1*0.5, a0)
 K = K[0]
 L = L[0]
 
@@ -57,6 +57,7 @@ u_log = np.zeros(len(timeVec))
 
 x = np.zeros((2,1))
 xhat = np.zeros((2,1))
+sigma = 0
 u = 0
 
 for i in range(len(timeVec)):
@@ -64,8 +65,9 @@ for i in range(len(timeVec)):
     if i % dt_interval == 0:
         t = i*h
         pos_ref, vel_ref = trajectory(0, setpoint, move_time, t)
-        u = K[0]*(pos_ref-xhat[0,0]) + K[1]*(vel_ref-xhat[1,0]) 
+        u = K[0]*(pos_ref-xhat[0,0]) + K[1]*(vel_ref-xhat[1,0]) - K[2]*sigma
         xhat = Ad @ xhat + Bd * u - L * (xhat[0,0] - x[0,0])
+        sigma = sigma + T*(x[0,0] - pos_ref)
 
     # CT Plant Update
     x = x + h * (A@x + B*u)

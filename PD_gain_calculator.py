@@ -3,7 +3,7 @@ from numpy.linalg import inv
 from scipy.linalg import expm
 from scipy.signal import place_poles
 
-def dt_gains(lambda_val, T, b1, b0, a1, a0):
+def pd_gains(lambda_val, T, b1, b0, a1, a0):
     # DT Poles
     gammaR = np.exp(-lambda_val * T)
     gammaE = np.exp(-lambda_val * 5 * T)
