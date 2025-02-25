@@ -6,7 +6,7 @@ import os
 import threading
 import matplotlib.pyplot as plt
 import numpy as np
-from PD_gain_calculator import pd_gains
+from PID_gain_calculator import pid_gains
 from actuator import RobstrideActuator, RobstrideActuatorConfig, RobstrideActuatorCommand, RobstrideConfigureRequest
 
 # Cleanup
@@ -52,10 +52,10 @@ f = 0.0144          # Could maybe help to compensate static friction but see to 
 ctrl_mode = 3                               # Mode 1 = feedforward only, use for calibrating motor model / Mode 2 = feedback only, needs to work in case accel isn't available / Mode 3 = both, best performance in theory
 lambda_val = 10
 T = 0.01
-manual_correction = np.array([1.0, 1.0])    # [Kp, Kd], adjusting Kd to 2-4X usually works well
+manual_correction = np.array([1.0, 1.0, 1.0])    # [Kp, Kd, Ki], adjusting Kd to 2-4X usually works well
 
 # DT Control Parameters
-K, L, Ad, Bd, Cd = pd_gains(lambda_val, T, 0.0, 1.0, 0.0, 0.0)
+K, L, Ad, Bd, Cd = pid_gains(lambda_val, T, 0.0, 1.0, 0.0, 0.0)
 K = K[0] * manual_correction
 L = L[0]
 
@@ -156,12 +156,13 @@ def control_thread():
             if ctrl_mode == 1:
                 cmd_acc = acc_ref
             elif ctrl_mode == 2:
-                cmd_acc = K[0]*(pos_ref-xhat[0,0]) + K[1]*(vel_ref-xhat[1,0])
+                cmd_acc = K[0]*(pos_ref-xhat[0,0]) + K[1]*(vel_ref-xhat[1,0]) - K[2]*sigma
             else:
-                cmd_acc = acc_ref + K[0]*(pos_ref-xhat[0,0]) + K[1]*(vel_ref-xhat[1,0])
+                cmd_acc = acc_ref + K[0]*(pos_ref-xhat[0,0]) + K[1]*(vel_ref-xhat[1,0]) - K[2]*sigma
             cmd_trq = J*cmd_acc + c*xhat[1,0] + f*np.sign(xhat[1,0])
             # Update Estimator and Integrator
             xhat = Ad @ xhat + Bd * cmd_acc - L * (Cd @ xhat - pos)
+            sigma = sigma + T*(pos - pos_ref)
             #Position Limits
             if abs(pos) > 3.1:
                 cmd_trq = 0
