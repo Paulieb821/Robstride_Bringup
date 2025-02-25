@@ -6,7 +6,6 @@ import os
 import threading
 import matplotlib.pyplot as plt
 import numpy as np
-from PID_gain_calculator import pid_gains
 from PD_gain_calculator import pd_gains
 from actuator import RobstrideActuator, RobstrideActuatorConfig, RobstrideActuatorCommand, RobstrideConfigureRequest
 
@@ -50,21 +49,14 @@ b0 = 152.51
 a1 = 0.66
 a0 = 0.0
 
-# Motor parameters
-J = 1/b0
-c = a1/b0
-
 # Poles and time step
 lambda_val = 10
 T = 0.01
-manual_correction = np.array([1.0, 3.0, 1.0])
+manual_correction = np.array([1.0, 1.0])   # [Kp, Kd], adjusting Kd to 2-4X usually works well
 
 # DT Control Parameters
-#K, L, Ad, Bd, Cd = pid_gains(lambda_val, T, b1, b0, a1, a0)
-#K, L, Ad, Bd, Cd = pid_gains(lambda_val, T, 0.0, 1.0, 0.0, 0.0)
-K, L, Ad, Bd, Cd = pd_gains(lambda_val, T, 0.0, 1.0, 0.0, 0.0)
-#K, L, Ad, Bd, Cd = pd_gains(lambda_val, T, b1, b0, a1, a0)
-K = K[0]
+K, L, Ad, Bd, Cd = pd_gains(lambda_val, T, b1, b0, a1, a0)
+K = K[0] * manual_correction
 L = L[0]
 
 # Motors and Logging
@@ -131,8 +123,6 @@ def control_thread():
     start_time = time.time()
     # State Estimator setup
     xhat = np.array([[initial_pos], [initial_vel]])
-    # Integrator setup
-    sigma = 0
     # Get references
     pos_ref_traj, vel_ref_traj, acc_ref_traj = generateReferences(initial_pos, setpoint, move_time, T, max_time)
     # Step Counter
@@ -149,7 +139,6 @@ def control_thread():
             supervisor.disable(3)
             break
         # Get trajectory references
-        #pos_ref, vel_ref, acc_ref = quintic_trajectory(initial_pos, setpoint, move_time, elapsed)
         if step_cnt < len(pos_ref_traj):
             pos_ref = pos_ref_traj[step_cnt]
             vel_ref = vel_ref_traj[step_cnt]
@@ -166,11 +155,9 @@ def control_thread():
             pos = math.radians(state[0].position)
             vel = math.radians(state[0].velocity)
             # Calculate torque using PD controller
-            cmd_acc = acc_ref# + K[0]*(pos_ref-xhat[0,0]) + K[1]*(vel_ref-xhat[1,0])# - K[2]*sigma
-            cmd_trq = J*cmd_acc + 1.8*c*xhat[1,0]
+            cmd_trq = K[0]*(pos_ref-xhat[0,0]) + K[1]*(vel_ref-xhat[1,0])
             # Update Estimator and Integrator
-            xhat = Ad @ xhat + Bd * cmd_acc - L * (Cd @ xhat - pos)
-            #sigma = sigma + T*(pos - pos_ref)
+            xhat = Ad @ xhat + Bd * cmd_trq - L * (Cd @ xhat - pos)
             #Position Limits
             if abs(pos) > 3.1:
                 cmd_trq = 0
