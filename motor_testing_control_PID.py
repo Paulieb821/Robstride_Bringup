@@ -52,7 +52,7 @@ a0 = 0.0
 # Poles and time step
 lambda_val = 10
 T = 0.01
-manual_correction = np.array([1.0, 1.0, 1.0])   # [Kp, Kd, Ki], adjusting Kd to 2-4X usually works well
+manual_correction = np.array([1.0, 1.8, 1.0])   # [Kp, Kd, Ki], adjusting Kd to 2-4X usually works well
 
 # DT Control Parameters
 K, L, Ad, Bd, Cd = pid_gains(lambda_val, T, b1, b0, a1, a0)
@@ -157,7 +157,10 @@ def control_thread():
             pos = math.radians(state[0].position)
             vel = math.radians(state[0].velocity)
             # Calculate torque using PD controller
-            cmd_trq = K[0]*(pos_ref-xhat[0,0]) + K[1]*(vel_ref-xhat[1,0]) - K[2]*sigma
+            cmd_trq = K[0]*(pos_ref-xhat[0,0]) + K[1]*(vel_ref-xhat[1,0]) - K[2]*sigma + 0.00720396*acc_ref
+            # Stay-still condition
+            if abs(xhat[0,0]-pos_ref) < 0.1 and abs(vel_ref) <= 0.05:
+                cmd_trq = 0
             # Update Estimator and Integrator
             xhat = Ad @ xhat + Bd * cmd_trq - L * (Cd @ xhat - pos)
             sigma = sigma + T*(pos - pos_ref)

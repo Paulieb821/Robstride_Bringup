@@ -14,7 +14,7 @@ from actuator import RobstrideActuator, RobstrideActuatorConfig, RobstrideActuat
 motor_id = 1
 
 # Runtime
-max_time = 0.9
+max_time = 20
 torque_amp = 0.05
 # Create Supervisor
 supervisor = RobstrideActuator(ports=['/dev/ttyUSB0'], py_actuators_config=[
@@ -63,8 +63,8 @@ def control_thread():
             
             # Torque Input
             omega = 5
-            #cmd_trq = 0.1 * np.sin(omega * elapsed)
-            cmd_trq = torque_amp
+            cmd_trq = 0.1 * np.sin(omega * elapsed)
+            #cmd_trq = -torque_amp
             print(round(pos,2), round(vel,2), round(cmd_trq,2))
             # Send out command
             supervisor.command_actuators(
@@ -124,14 +124,14 @@ def sys_id(vel, torque, time, bandwidth):
 
     # Print system parameters
     print("\nSystem parameters")
-    print("b0: ", round(b0, 2))
-    print("a0: ", round(a0, 2))
+    print("b0: ", round(b0, 7))
+    print("a0: ", round(a0, 7))
     print("\nTransfer function: ")
     print(f"G(s) = {round(b0,2)})/(s + {round(a0,2)})\n")
 
     print("Motor Parameters")
-    print("J: ", round(J, 2))
-    print("c: ", round(c, 2), "\n")
+    print("J: ", round(J, 7))
+    print("c: ", round(c, 7), "\n")
 
     G = ctrl.TransferFunction([b0 * torque_amp], [1, a0])
     # Compute step response over the same time horizon
@@ -141,26 +141,12 @@ def sys_id(vel, torque, time, bandwidth):
     
 
 def plot_motor_data():
-    # Do sysID
-    neg_found = False
+    pos_data = np.array(data["position"][100:-1])
+    torque_data = np.array(data["torque"][100:-1])
+    time_data = np.array(data["time"][100:-1])
+    velocity_data = np.array(data["velocity"][100:-1])
 
-    for i in range(len(data["position"])):
-        if data["position"][i] < 0 and i > 10:
-            print("i is : ", i)
-            print("data[1][position] is : ", data["position"][i])
-            neg_found = True
-            pos_data = np.array(data["position"])[:i]
-            torque_data = np.array(data["torque"])[:i]
-            time_data = np.array(data["time"])[:i]
-            velocity_data = np.array(data["velocity"])[:i]
-            break
-    if not neg_found:
-        pos_data = np.array(data["position"])
-        torque_data = np.array(data["torque"])
-        time_data = np.array(data["time"])
-        velocity_data = np.array(data["velocity"])
-
-    t_out, y_out = sys_id(pos_data, torque_data, time_data, 0.1)
+    t_out, y_out = sys_id(velocity_data, torque_data, time_data, 0.1)
     print("length of data[time] : ", len(data["time"]))
     print("length of data[position] : ", len(data["position"]))
     print("length of data[velocity] : ", len(data["velocity"]))

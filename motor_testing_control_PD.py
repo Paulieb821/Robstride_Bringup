@@ -50,9 +50,9 @@ a1 = 0.66
 a0 = 0.0
 
 # Poles and time step
-lambda_val = 10
+lambda_val = 20
 T = 0.01
-manual_correction = np.array([1.0, 1.0])   # [Kp, Kd], adjusting Kd to 2-4X usually works well
+manual_correction = np.array([1.0, 1.8])   # [Kp, Kd], adjusting Kd to 2-4X usually works well
 
 # DT Control Parameters
 K, L, Ad, Bd, Cd = pd_gains(lambda_val, T, b1, b0, a1, a0)

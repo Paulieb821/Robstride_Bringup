@@ -44,15 +44,15 @@ setpoint = 2
 move_time = 1
 
 # Motor parameters
-J = 1               # Main scaling factor on acceleration
-c = 1               # If you see the motor whipping back after the move, you probably need more c
-f = 0.0144          # Could maybe help to compensate static friction but see to zero if buggy
+J = 0.00720396               # Main scaling factor on acceleration
+c = 0               # If you see the motor whipping back after the move, you probably need more c
+f = 0          # Could maybe help to compensate static friction but see to zero if buggy
 
 # Poles and time step
-ctrl_mode = 3                               # Mode 1 = feedforward only, use for calibrating motor model / Mode 2 = feedback only, needs to work in case accel isn't available / Mode 3 = both, best performance in theory
-lambda_val = 10
+ctrl_mode = 3                              # Mode 1 = feedforward only, use for calibrating motor model / Mode 2 = feedback only, needs to work in case accel isn't available / Mode 3 = both, best performance in theory
+lambda_val = 30
 T = 0.01
-manual_correction = np.array([1.0, 1.0, 1.0])    # [Kp, Kd, Ki], adjusting Kd to 2-4X usually works well
+manual_correction = np.array([1.0, 1.5, 1.0])    # [Kp, Kd, Ki], adjusting Kd to 2-4X usually works well
 
 # DT Control Parameters
 K, L, Ad, Bd, Cd = pid_gains(lambda_val, T, 0.0, 1.0, 0.0, 0.0)
@@ -160,6 +160,9 @@ def control_thread():
             else:
                 cmd_acc = acc_ref + K[0]*(pos_ref-xhat[0,0]) + K[1]*(vel_ref-xhat[1,0]) - K[2]*sigma
             cmd_trq = J*cmd_acc + c*xhat[1,0] + f*np.sign(xhat[1,0])
+            # Stay-still condition
+            if abs(xhat[0,0]-pos_ref) < 0.1 and abs(vel_ref) <= 0.01:
+                cmd_trq = 0
             # Update Estimator and Integrator
             xhat = Ad @ xhat + Bd * cmd_acc - L * (Cd @ xhat - pos)
             sigma = sigma + T*(pos - pos_ref)
