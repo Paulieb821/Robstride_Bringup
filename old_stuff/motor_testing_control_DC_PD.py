@@ -6,7 +6,7 @@ import os
 import threading
 import matplotlib.pyplot as plt
 import numpy as np
-from PD_gain_calculator import pd_gains
+from controller_utils.PD_gain_calculator import pd_gains
 from actuator import RobstrideActuator, RobstrideActuatorConfig, RobstrideActuatorCommand, RobstrideConfigureRequest
 
 # Cleanup
@@ -43,19 +43,19 @@ while not initials_gotten:
 setpoint = 2
 move_time = 1
 
-# Transfer function 
-b1 = -6.116
-b0 = 152.51
-a1 = 0.66
-a0 = 0.0
+# Motor parameters
+J = 1               # Main scaling factor on acceleration
+c = 1               # If you see the motor whipping back after the move, you probably need more c
+f = 0.0144          # Could maybe help to compensate static friction but see to zero if buggy
 
 # Poles and time step
-lambda_val = 20
+ctrl_mode = 3                               # Mode 1 = feedforward only, use for calibrating motor model / Mode 2 = feedback only, needs to work in case accel isn't available / Mode 3 = both, best performance in theory
+lambda_val = 10
 T = 0.01
-manual_correction = np.array([1.0, 1.8])   # [Kp, Kd], adjusting Kd to 2-4X usually works well
+manual_correction = np.array([1.0, 1.0])    # [Kp, Kd], adjusting Kd to 2-4X usually works well
 
 # DT Control Parameters
-K, L, Ad, Bd, Cd = pd_gains(lambda_val, T, b1, b0, a1, a0)
+K, L, Ad, Bd, Cd = pd_gains(lambda_val, T, 0.0, 1.0, 0.0, 0.0)
 K = K[0] * manual_correction
 L = L[0]
 
@@ -69,10 +69,8 @@ def cubic_trajectory(xo, xf, tf, time):
         c0 = xo
         c2 = 3*(xf - xo)/pow(tf,2)
         c3 = -2*(xf - xo)/pow(tf,3)
-        #return (c0 + c2*pow(time,2) + c3*pow(time,3), 2*c2*time + 3*c3*pow(time,2), 2*c2 + 6*c3*time)
         return c0 + c2*pow(time,2) + c3*pow(time,3)
     else:
-        #return (xf, 0, 0)
         return xf
 
 def quintic_trajectory(xo, xf, tf, time):
@@ -89,11 +87,9 @@ def quintic_trajectory(xo, xf, tf, time):
         position = a0 + a1 * time + a2 * time**2 + a3 * time**3 + a4 * time**4 + a5 * time**5
         velocity = a1 + 2 * a2 * time + 3 * a3 * time**2 + 4 * a4 * time**3 + 5 * a5 * time**4
         accel = 2*a2 + 6*a3*time + 12*a4*time**2 + 20*a5*time**3
-        #return position, velocity, accel
         return position
     else:
         # At the final time, return the final position and velocity = 0
-        #return xf, 0,0 
         return xf
 
 def generateReferences(x0, xf, move_time, time_step, max_time):
@@ -155,9 +151,15 @@ def control_thread():
             pos = math.radians(state[0].position)
             vel = math.radians(state[0].velocity)
             # Calculate torque using PD controller
-            cmd_trq = K[0]*(pos_ref-xhat[0,0]) + K[1]*(vel_ref-xhat[1,0])
-            # Update Estimator and Integrator
-            xhat = Ad @ xhat + Bd * cmd_trq - L * (Cd @ xhat - pos)
+            if ctrl_mode == 1:
+                cmd_acc = acc_ref
+            elif ctrl_mode == 2:
+                cmd_acc = K[0]*(pos_ref-xhat[0,0]) + K[1]*(vel_ref-xhat[1,0])
+            else:
+                cmd_acc = acc_ref + K[0]*(pos_ref-xhat[0,0]) + K[1]*(vel_ref-xhat[1,0])
+            cmd_trq = J*cmd_acc + c*xhat[1,0] + f*np.sign(xhat[1,0])
+            # Update Estimator
+            xhat = Ad @ xhat + Bd * cmd_acc - L * (Cd @ xhat - pos)
             #Position Limits
             if abs(pos) > 3.1:
                 cmd_trq = 0

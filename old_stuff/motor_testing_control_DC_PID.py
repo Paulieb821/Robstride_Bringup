@@ -6,7 +6,7 @@ import os
 import threading
 import matplotlib.pyplot as plt
 import numpy as np
-from PID_gain_calculator import pid_gains
+from controller_utils.PID_gain_calculator import pid_gains
 from actuator import RobstrideActuator, RobstrideActuatorConfig, RobstrideActuatorCommand, RobstrideConfigureRequest
 
 # Cleanup

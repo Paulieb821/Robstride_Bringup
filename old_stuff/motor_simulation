@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.linalg import inv
-from PID_gain_calculator import pid_gains
+from joint_control_utils.PID_gain_calculator import pid_gains
 
 # Poles and Time Step
 lambda_val = 15
