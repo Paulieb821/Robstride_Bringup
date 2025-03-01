@@ -7,7 +7,7 @@ import numpy as np
 from joint_control_utils.PID_Controller import PID_Controller
 from joint_control_utils.Joint_Trajectories import cubic_trajectory, quintic_trajectory
 from actuator import RobstrideActuator, RobstrideActuatorConfig, RobstrideActuatorCommand, RobstrideConfigureRequest
-
+from plot import Plot
 
 # Create Supervisor
 supervisor = RobstrideActuator(ports=['/dev/ttyUSB0'], py_actuators_config=[
@@ -114,4 +114,6 @@ except KeyboardInterrupt:
     supervisor.disable(7)
     supervisor.disable(3)
 finally:
+    plotter = Plot(data)
+    plotter.plot_motor_data()
     print("Exiting control loop.")

@@ -24,7 +24,7 @@ class PID_Controller:
     # Run Update Loop
     def update_controller(self, pos, pos_ref, vel_ref, acc_ref):
         # Generate torque command with deadzoning
-        if abs(self.xhat[0,0]-pos_ref) < 0.1 and abs(vel_ref) <= 0.1:
+        if abs(self.xhat[0,0]-pos_ref) < self.pos_deadzone and abs(vel_ref) <= self.vel_deadzone:
             cmd_trq = 0
         else:
             cmd_trq = self.K[0]*(pos_ref-self.xhat[0,0]) + self.K[1]*(vel_ref-self.xhat[1,0]) - self.K[2]*self.sigma + self.J*acc_ref
