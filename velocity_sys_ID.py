@@ -14,8 +14,8 @@ from actuator import RobstrideActuator, RobstrideActuatorConfig, RobstrideActuat
 motor_id = 1
 
 # Runtime
-max_time = 20
-torque_amp = 0.05
+max_time = 10
+torque_amp = -0.05
 # Create Supervisor
 supervisor = RobstrideActuator(ports=['/dev/ttyUSB0'], py_actuators_config=[
     (motor_id, RobstrideActuatorConfig(1)),    # J1
@@ -63,8 +63,8 @@ def control_thread():
             
             # Torque Input
             omega = 5
-            cmd_trq = 0.1 * np.sin(omega * elapsed)
-            #cmd_trq = -torque_amp
+            # cmd_trq = 0.1 * np.sin(omega * elapsed)
+            cmd_trq = torque_amp
             print(round(pos,2), round(vel,2), round(cmd_trq,2))
             # Send out command
             supervisor.command_actuators(

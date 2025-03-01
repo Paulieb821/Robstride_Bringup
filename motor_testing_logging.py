@@ -24,7 +24,8 @@ def monitor_thread():
 
     loop_start = time.time()
     while True:
-        state = supervisor.get_actuators_state([1])
+        state = supervisor.get_actuators_state([3])
+        print("State : ", state)
         if state:
             pos = math.radians(state[0].position)
             print("Motor 1 Position:", round(pos, 2))

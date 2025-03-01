@@ -19,6 +19,7 @@ supervisor = RobstrideActuator(ports=['/dev/ttyUSB0'], py_actuators_config=[
     (3, RobstrideActuatorConfig(1)),    # J3
     ])
 
+active_id = 1
 
 supervisor.run_main_loop(1)
 
@@ -32,7 +33,7 @@ print("Motor enabled")
 
 initials_gotten = False
 while not initials_gotten:
-    state = supervisor.get_actuators_state([1])
+    state = supervisor.get_actuators_state([active_id])
     if state:
         initial_pos = math.radians(state[0].position)
         initial_vel = math.radians(state[0].velocity)
@@ -41,18 +42,24 @@ while not initials_gotten:
 
 # Trajectorty Parameters
 setpoint = 2
-move_time = 1
+move_time = 30
 
 # Transfer function 
-b1 = -6.116
+b1 = 0.0
 b0 = 152.51
-a1 = 0.66
+a1 = 0.0
 a0 = 0.0
+
+# b1 = 0.0
+# b0 = 1 / (0.012764958)
+# a1 = 0.0
+# a0 = 0.0
+
 
 # Poles and time step
 lambda_val = 10
 T = 0.01
-manual_correction = np.array([1.0, 1.8, 1.0])   # [Kp, Kd, Ki], adjusting Kd to 2-4X usually works well
+manual_correction = np.array([1.0, 2.0, 1.0])   # [Kp, Kd, Ki], adjusting Kd to 2-4X usually works well
 
 # DT Control Parameters
 K, L, Ad, Bd, Cd = pid_gains(lambda_val, T, b1, b0, a1, a0)
@@ -122,7 +129,8 @@ def control_thread():
     # Get program start time
     start_time = time.time()
     # State Estimator setup
-    xhat = np.array([[initial_pos], [initial_vel]])
+    #xhat = np.array([[initial_pos], [initial_vel]])
+    xhat = np.array([[0], [initial_vel]])
     # Integrator setup
     sigma = 0
     # Get references
@@ -135,7 +143,7 @@ def control_thread():
         elapsed = time.time() - start_time
         if (elapsed > max_time):
             supervisor.command_actuators(
-                [RobstrideActuatorCommand(actuator_id=1, position=0.0, velocity=0.0, torque=0)])
+                [RobstrideActuatorCommand(actuator_id=active_id, position=0.0, velocity=0.0, torque=0)])
             supervisor.disable(1)
             supervisor.disable(7)
             supervisor.disable(3)
@@ -151,25 +159,31 @@ def control_thread():
             vel_ref = vel_ref_traj[-1]
             acc_ref = acc_ref_traj[-1]
         # Get motor state
-        state = supervisor.get_actuators_state([1])
+        state = supervisor.get_actuators_state([active_id])
         if state:
             # Process position and velocity
-            pos = math.radians(state[0].position)
+            pos = math.radians(state[0].position) - initial_pos
+            # print("This is the position in degrees : ", np.rad2deg(pos))
             vel = math.radians(state[0].velocity)
             # Calculate torque using PD controller
-            cmd_trq = K[0]*(pos_ref-xhat[0,0]) + K[1]*(vel_ref-xhat[1,0]) - K[2]*sigma + 0.00720396*acc_ref
+            # cmd_trq = K[0]*(pos_ref-xhat[0,0]) + K[1]*(vel_ref-xhat[1,0]) - K[2]*sigma + (1 / b0) * acc_ref
             # Stay-still condition
-            if abs(xhat[0,0]-pos_ref) < 0.1 and abs(vel_ref) <= 0.05:
-                cmd_trq = 0
+            # if abs(xhat[0,0]-pos_ref) < 0.1 and abs(vel_ref) <= 0.1:
+            #     print("Staying still ")
+            #     cmd_trq = 0
+            # cmd_trq = 0.1 * (0.216 * 9.81 * 0.3/2 * np.sin(pos))
+            cmd_trq = (1.2 + 0.224/2) * 9.81 * 0.3
+            # print("This is the ocmmand torque : ", cmd_trq)
             # Update Estimator and Integrator
             xhat = Ad @ xhat + Bd * cmd_trq - L * (Cd @ xhat - pos)
-            sigma = sigma + T*(pos - pos_ref)
+            if abs(cmd_trq) < 1:
+                sigma = sigma + T*(pos - pos_ref)
             #Position Limits
-            if abs(pos) > 3.1:
-                cmd_trq = 0
+            # if abs(pos) > 3.1:
+            #     cmd_trq = 0
             # Send out command
             supervisor.command_actuators(
-                [RobstrideActuatorCommand(actuator_id=1, position=0, velocity=0.0, torque=cmd_trq)]
+                [RobstrideActuatorCommand(actuator_id=active_id, position=0, velocity=0.0, torque=cmd_trq)]
             )
             data[1]["time"].append(elapsed)
             data[1]["position"].append(pos)
