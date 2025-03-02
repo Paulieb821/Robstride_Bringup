@@ -3,6 +3,7 @@ import math
 import time
 import os
 import threading
+import numpy as np
 from actuator import RobstrideActuator, RobstrideActuatorConfig, RobstrideActuatorCommand
 
 # Cleanup
@@ -25,10 +26,12 @@ def monitor_thread():
     loop_start = time.time()
     while True:
         state = supervisor.get_actuators_state([3])
-        print("State : ", state)
         if state:
             pos = math.radians(state[0].position)
-            print("Motor 1 Position:", round(pos, 2))
+            #print("Motor 1 Position:", round(pos, 2))
+            print("Motor 4 Position:", round(pos, 2))
+            print("Joint Position:", round(pos/3, 2))
+            print("")
 
         
         # state = supervisor.get_actuators_state([1,7,3])

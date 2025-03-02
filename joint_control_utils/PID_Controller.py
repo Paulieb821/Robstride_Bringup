@@ -1,5 +1,5 @@
 import numpy as np
-from PID_gain_calculator import pid_gains
+from joint_control_utils.PID_gain_calculator import pid_gains
 
 class PID_Controller:
 
@@ -22,17 +22,21 @@ class PID_Controller:
         self.sigma = 0
     
     # Run Update Loop
-    def update_controller(self, pos, pos_ref, vel_ref, acc_ref):
+    def update_controller(self, pos, vel, pos_ref, vel_ref, acc_ref, comp_trq):
         # Generate torque command with deadzoning
-        if abs(self.xhat[0,0]-pos_ref) < self.pos_deadzone and abs(vel_ref) <= self.vel_deadzone:
+        if abs(self.xhat[0,0]-pos_ref) < self.pos_deadzone and abs(vel_ref) < self.vel_deadzone:
             cmd_trq = 0
         else:
             cmd_trq = self.K[0]*(pos_ref-self.xhat[0,0]) + self.K[1]*(vel_ref-self.xhat[1,0]) - self.K[2]*self.sigma + self.J*acc_ref
+            # print("Tp: ", round(self.K[0]*(pos_ref-self.xhat[0,0]),2))
+            # print("Td: ", round(self.K[1]*(vel_ref-self.xhat[1,0]),2))
+            # print("Ti: ", round(-self.K[2]*self.sigma,2))
+            # print("Tg: ", round(comp_trq*np.sin(pos), 2))
         # Update state estimator
-        xhat = self.Ad @ xhat + self.Bd * cmd_trq - self.L * (self.Cd @ xhat - pos)
+        self.xhat = self.Ad @ self.xhat + self.Bd * cmd_trq - self.L * (self.Cd @ self.xhat - pos)
         # Update integrator
-        if abs(cmd_trq) < 6:
-            sigma = sigma + self.T*(pos - pos_ref)
+        if abs(cmd_trq) < self.anti_windup:
+            self.sigma = self.sigma + self.T*(self.xhat[0,0] - pos_ref)
         # Return command torque
-        return cmd_trq
+        return cmd_trq + comp_trq*np.sin(pos)
 

@@ -5,6 +5,7 @@ import threading
 import matplotlib.pyplot as plt
 import numpy as np
 from joint_control_utils.PID_Controller import PID_Controller
+from joint_control_utils.PD_Controller import PD_Controller
 from joint_control_utils.Joint_Trajectories import cubic_trajectory, quintic_trajectory
 from actuator import RobstrideActuator, RobstrideActuatorConfig, RobstrideActuatorCommand, RobstrideConfigureRequest
 from plot import Plot
@@ -37,15 +38,31 @@ while not initials_gotten:
         initial_vel = math.radians(state[0].velocity)
         initials_gotten = True
 
+# System parameters - RS01 on 2.5kg pendulum arm
+# rotor_inertia = 0.01
+# added_inertia = (1.2 * 0.3**2 + 0.224 * 0.3**2/3)
+# total_inertia = rotor_inertia + added_inertia
+# comp_trq = 1.25 * 0.3 * 9.81 * (1.1 + 0.224/2)
+# gear_ratio = 1
+
+# System parameters - Elbow
+rotor_inertia = 0.3
+added_inertia = 0.0
+total_inertia = rotor_inertia + added_inertia
+comp_trq = 0.0
+gear_ratio = 3
+
+
 # Initialize controller
 T = 0.01
-controller = PID_Controller(timestep=T, inertia=0.006556, bandwidth=10,Kd_correction=2.0, 
-                            anti_windup_trq=6, pos_deadzone=0.1, vel_deadzone=0.1)
+controller = PD_Controller(timestep=T, gear_ratio=gear_ratio, inertia=total_inertia, bandwidth=15.0, Kd_correction=1.0, 
+                            anti_windup_trq=6.0, pos_deadzone=0.1, vel_deadzone=0.1,
+                            initial_pos=0.0, initial_vel=initial_vel, joint_limits=[1, -1])
 
 
 # Trajectorty Parameters
-setpoint = -2
-move_time = 2
+setpoint = -0.8
+move_time = 1
 
 # Motors and Logging
 motor_ids = [1, 7, 3]
@@ -53,7 +70,6 @@ data = {motor_id: {"time": [], "position": [], "velocity": [], "torque": [], "po
 
 # Misc
 max_time = move_time + 3
-failure_count = 0
 
 # Main Control Loop
 def control_thread():
@@ -72,7 +88,7 @@ def control_thread():
             supervisor.disable(3)
             break
         # Get trajectory references
-        pos_ref, vel_ref, acc_ref = quintic_trajectory(initial_pos, setpoint, move_time, elapsed)
+        pos_ref, vel_ref, acc_ref = quintic_trajectory(0.0, setpoint, move_time, elapsed)
         # Get motor state
         state = supervisor.get_actuators_state([active_id])
         if state:
@@ -80,22 +96,22 @@ def control_thread():
             pos = math.radians(state[0].position) - initial_pos
             vel = math.radians(state[0].velocity)
             # Calculate torque using PID controller
-            cmd_trq = controller.update_controller(pos, pos_ref, vel_ref, acc_ref)
+            cmd_trq = controller.update_controller(pos, vel, pos_ref, vel_ref, acc_ref, comp_trq)
             # Send out command
             supervisor.command_actuators(
                 [RobstrideActuatorCommand(actuator_id=active_id, position=0, velocity=0.0, torque=cmd_trq)]
             )
             # Data Logging
-            data[1]["time"].append(elapsed)
-            data[1]["position"].append(pos)
-            data[1]["velocity"].append(vel)
-            data[1]["torque"].append(cmd_trq)
-            data[1]["pos_ref"].append(pos_ref)
-            data[1]["vel_ref"].append(vel_ref)
-            data[1]["pos_pred"].append(controller.xhat[0,0])
-            data[1]["vel_pred"].append(controller.xhat[1,0])
-        else:
-            failure_count += 1
+            data[active_id]["time"].append(elapsed)
+            data[active_id]["position"].append(pos/gear_ratio)
+            data[active_id]["velocity"].append(vel/gear_ratio)
+            data[active_id]["torque"].append(cmd_trq)
+            data[active_id]["pos_ref"].append(pos_ref)
+            data[active_id]["vel_ref"].append(vel_ref)
+            data[active_id]["pos_pred"].append(controller.xhat[0,0])
+            data[active_id]["vel_pred"].append(controller.xhat[1,0])
+        else: 
+            print("Didn't get state")
 
         # Ensure consistent frame times
         elapsed_end = time.time() - start_time
