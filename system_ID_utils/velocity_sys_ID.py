@@ -11,10 +11,10 @@ import control as ctrl
 from actuator import RobstrideActuator, RobstrideActuatorConfig, RobstrideActuatorCommand, RobstrideConfigureRequest
 
 # Motor ID
-motor_id = 3
+motor_id = 1
 
 # Runtime
-max_time = 3
+max_time = 4
 torque_amp = 0.1
 # Create Supervisor
 supervisor = RobstrideActuator(ports=['/dev/ttyUSB0'], py_actuators_config=[

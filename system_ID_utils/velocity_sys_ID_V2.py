@@ -12,11 +12,11 @@ from sklearn.linear_model import LinearRegression
 from actuator import RobstrideActuator, RobstrideActuatorConfig, RobstrideActuatorCommand, RobstrideConfigureRequest
 
 # Motor ID
-motor_id = 3
+motor_id = 1
 
 # Runtime
-max_time = 2
-torque_amp = 0.2
+max_time = 3
+torque_amp = 0.15
 # Create Supervisor
 supervisor = RobstrideActuator(ports=['/dev/ttyUSB0'], py_actuators_config=[
     (motor_id, RobstrideActuatorConfig(1)),    # J1
