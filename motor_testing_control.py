@@ -27,7 +27,7 @@ supervisor.enable(3)
 print("Motor enabled")
 
 # Select active motor
-active_id = 2
+active_id = 3
 
 # Get initial values
 initials_gotten = False
@@ -49,12 +49,12 @@ while not initials_gotten:
 
 # System parameters - Elbow
 # Bandwidth = 30.0, no deadzones
-# rotor_inertia = 0.3
-# added_inertia = 0.0
-# total_inertia = rotor_inertia + added_inertia
-# comp_trq = 0.0
-# gear_ratio = 3
-# relative_pos = False
+rotor_inertia = 0.3
+added_inertia = 0.0
+total_inertia = rotor_inertia + added_inertia
+comp_trq = 0.0
+gear_ratio = 3
+relative_pos = False
 
 # System parameters - J1 spinning J2
 # Bandwidth = 35.0, vel_deadzone = 0.1, everything else default
@@ -67,12 +67,12 @@ while not initials_gotten:
 
 # System parameters - J2 in bracket
 # Bandwidth = 30.0, everything else default
-rotor_inertia = 0.1
-added_inertia = 0.0
-total_inertia = rotor_inertia + added_inertia
-comp_trq = 0.0
-gear_ratio = 1
-relative_pos = False
+# rotor_inertia = 0.1
+# added_inertia = 0.0
+# total_inertia = rotor_inertia + added_inertia
+# comp_trq = 0.3 * 9.81 * (1.1 * 0.75  + 0.224 * 0.5)
+# gear_ratio = 1
+# relative_pos = True
 
 # Initialize controller
 T = 0.01
@@ -86,7 +86,7 @@ controller = PD_Controller(timestep=T, gear_ratio=gear_ratio, inertia=total_iner
 
 
 # Trajectorty Parameters
-setpoint = 2
+setpoint = 0.8
 move_time = 1
 
 # Motors and Logging

@@ -47,14 +47,14 @@ added_inertia_1 = 0.011729
 total_inertia_1 = rotor_inertia_1 + added_inertia_1
 comp_trq_1 = 0.0
 gear_ratio_1 = 1
-relative_pos_1 = False
+relative_pos_1 = True
 # Bandwidth = 30.0, everything else default
 rotor_inertia_2 = 0.1
 added_inertia_2 = 0.0
 total_inertia_2 = rotor_inertia_2 + added_inertia_2
 comp_trq_2 = 0.0
 gear_ratio_2 = 1
-relative_pos_2 = False
+relative_pos_2 = True
 
 # Initialize joint controllers
 T = 0.01
@@ -63,7 +63,7 @@ if relative_pos_1:
     ip = 0.0
 else:
     ip = initial_pos_1
-controller_1 = PD_Controller(timestep=T, gear_ratio=gear_ratio_1, inertia=total_inertia_1, bandwidth=35.0, Kd_correction=1.0, 
+controller_1 = PD_Controller(timestep=T, gear_ratio=gear_ratio_1, inertia=total_inertia_1, bandwidth=15.0, Kd_correction=1.0, 
                             anti_windup_trq=6.0, pos_deadzone=0.1, vel_deadzone=0.1,
                             initial_pos=ip, initial_vel=initial_vel_1, joint_limits=[3, -3])
 # J2
@@ -71,13 +71,14 @@ if relative_pos_2:
     ip = 0.0
 else:
     ip = initial_pos_2
-controller_2 = PD_Controller(timestep=T, gear_ratio=gear_ratio_2, inertia=total_inertia_2, bandwidth=30.0, Kd_correction=1.0, 
+controller_2 = PD_Controller(timestep=T, gear_ratio=gear_ratio_2, inertia=total_inertia_2, bandwidth=15.0, Kd_correction=1.0, 
                             anti_windup_trq=6.0, pos_deadzone=0.1, vel_deadzone=0.0,
                             initial_pos=ip, initial_vel=initial_vel_2, joint_limits=[3, -3])
 
 
 # Trajectorty Parameters
-setpoint = 1
+setpoint_1 = 1
+setpoint_2 =-1
 move_time = 1
 
 # Motors and Logging
@@ -106,13 +107,13 @@ def control_thread():
             break
         # Get trajectory references
         if relative_pos_1:
-            pos_ref_1, vel_ref_1, acc_ref_1 = quintic_trajectory(0.0, setpoint, move_time, elapsed)
+            pos_ref_1, vel_ref_1, acc_ref_1 = quintic_trajectory(0.0, setpoint_1, move_time, elapsed)
         else:
-            pos_ref_1, vel_ref_1, acc_ref_1 = quintic_trajectory(initial_pos_1/gear_ratio_1, setpoint, move_time, elapsed)
+            pos_ref_1, vel_ref_1, acc_ref_1 = quintic_trajectory(initial_pos_1/gear_ratio_1, setpoint_1, move_time, elapsed)
         if relative_pos_2:
-            pos_ref_2, vel_ref_2, acc_ref_2 = quintic_trajectory(0.0, setpoint, move_time, elapsed)
+            pos_ref_2, vel_ref_2, acc_ref_2 = quintic_trajectory(0.0, setpoint_2, move_time, elapsed)
         else:
-            pos_ref_2, vel_ref_2, acc_ref_2 = quintic_trajectory(initial_pos_2/gear_ratio_2, setpoint, move_time, elapsed)
+            pos_ref_2, vel_ref_2, acc_ref_2 = quintic_trajectory(initial_pos_2/gear_ratio_2, setpoint_2, move_time, elapsed)
         # Get motor state
         state = supervisor.get_actuators_state(active_ids)
         if state:

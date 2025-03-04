@@ -17,9 +17,8 @@ supervisor = RobstrideActuator(ports=['/dev/ttyUSB0'], py_actuators_config=[
     ])
 
 supervisor.run_main_loop(1)
-time.sleep(0.5)
+time.sleep(1)
 supervisor.enable(1)
-time.sleep(0.5)
 supervisor.enable(2)
 supervisor.enable(3)
 
@@ -27,23 +26,23 @@ def monitor_thread():
 
     loop_start = time.time()
     while True:
-        # state = supervisor.get_actuators_state([2])
-        # if state:
-        #     pos = math.radians(state[0].position)
-        #     print("Motor 1 Position:", round(pos, 2))
-        #     # print("Motor 4 Position:", round(pos, 2))
-        #     # print("Joint Position:", round(pos/3, 2))
-        #     print("")
-        # else:
-        #     print("failed")
-        # time.sleep(0.01)
-
-        state = supervisor.get_actuators_state([1,2])
-        if state and len(state)==2:
-            print("J1:", round(np.deg2rad(state[0].position), 2), "J2:", round(np.deg2rad(state[1].position), 2))
+        state = supervisor.get_actuators_state([3])
+        if state:
+            pos = math.radians(state[0].position)
+            # print("Motor 1 Position:", round(pos, 2))
+            print("Motor 4 Position:", round(pos, 2))
+            print("Joint Position:", round(pos/3, 2))
+            print("")
         else:
-            print(len(state))
+            print("failed")
         time.sleep(0.01)
+
+        # state = supervisor.get_actuators_state([1,2])
+        # if state and len(state)==2:
+        #     print("J1:", round(np.deg2rad(state[0].position), 2), "J2:", round(np.deg2rad(state[1].position), 2))
+        # else:
+        #     print(len(state))
+        # time.sleep(0.01)
 
 
         # state = supervisor.get_actuators_state([1,7,3])
