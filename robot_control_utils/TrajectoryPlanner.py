@@ -2,7 +2,7 @@ import mujoco as mj
 import numpy as np
 import math
 #import matplotlib.pyplot as plt
-from controller_utils.NRIK import NRIK as ik
+from robot_control_utils.NRIK import NRIK as ik
 
 # --- Angle Key ---
 # 0 0 90    --> points in +y
@@ -35,8 +35,9 @@ class TrajectoryPlanner6dof:
         # Joint Space Trajectory
         self.jointSpaceTraj = np.zeros([1, self.numJoints])
         # Controller References
-        self.xref = -1
-        self.uref = -1
+        self.pos_ref = -1
+        self.vel_ref = -1
+        self.acc_ref = -1
         # Starting Point
         self.data.qpos = initialPose
         mj.mj_forward(self.model, self.data)
@@ -185,10 +186,11 @@ class TrajectoryPlanner6dof:
     # Generate Discrete Time Controller References Before Running Controller
     def generateReferences(self):
         numPoints = np.size(self.timeArr)
-        xref = np.zeros((numPoints, 2*self.numJoints))
-        uref = np.zeros((numPoints, self.numJoints))
+        pos_ref = np.zeros((numPoints, self.numJoints))
+        vel_ref = np.zeros((numPoints, self.numJoints))
+        acc_ref = np.zeros((numPoints, self.numJoints))
         # Populate first half of xref w/ position trajectory
-        xref[:,0:self.numJoints] = self.jointSpaceTraj
+        pos_ref = self.jointSpaceTraj
         # Useful constants
         a = -2*self.pps
         b = 2*pow(self.pps,2)
@@ -196,11 +198,12 @@ class TrajectoryPlanner6dof:
         # Solve for velocity and force references
         for j in range(self.numJoints):
             for i in range(numPoints-1):
-                uref[i,j] = a*xref[i,self.numJoints+j] + b*(xref[i+1,j] - xref[i,j])
-                xref[i+1,self.numJoints+j] = xref[i,self.numJoints+j] + T*uref[i,j]
+                acc_ref[i,j] = a*vel_ref[i,j] + b*(pos_ref[i+1,j] - pos_ref[i,j])
+                vel_ref[i+1,j] = vel_ref[i,j] + T*acc_ref[i,j]
         # Add to Trajectory 
-        self.xref = xref
-        self.uref = uref
+        self.pos_ref = pos_ref
+        self.vel_ref = vel_ref
+        self.acc_ref = acc_ref
 
     
     # def plotJoints(self, motorSpecs=None):

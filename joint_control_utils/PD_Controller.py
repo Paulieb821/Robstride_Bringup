@@ -20,6 +20,7 @@ class PD_Controller:
         self.L = L[0]
         # Initialize estimator
         self.xhat = np.array([[initial_pos/gear_ratio], [initial_vel/gear_ratio]])
+        self.oldpos = initial_pos
     
     # Run Update Loop
     def update_controller(self, pos, vel, pos_ref, vel_ref, acc_ref, comp_trq):
@@ -27,10 +28,11 @@ class PD_Controller:
         pos = pos/self.gear_ratio
         vel = vel/self.gear_ratio
         # Generate torque command with deadzoning
-        if pos > self.joint_limits[0] or pos < self.joint_limits[1] or abs(vel_ref) < self.vel_deadzone:
-            cmd_trq = 0
+        if pos > self.joint_limits[0] or pos < self.joint_limits[1] or (abs(vel_ref) < self.vel_deadzone and abs(pos-pos_ref) < self.pos_deadzone):
+            cmd_trq = self.K[0]*(pos_ref-self.xhat[0,0]) + self.K[1]*(vel_ref-self.xhat[1,0]) + acc_ref
         else:
             cmd_trq = self.K[0]*(pos_ref-self.xhat[0,0]) + self.K[1]*(vel_ref-self.xhat[1,0]) + acc_ref
+        cmd_trq = self.K[0]*(pos_ref-pos) + self.K[1]*(vel_ref-vel) #+ acc_ref
         # Update state estimator
         self.xhat = self.Ad @ self.xhat + self.Bd * cmd_trq - self.L * (self.Cd @ self.xhat - pos)
         # Return command torque

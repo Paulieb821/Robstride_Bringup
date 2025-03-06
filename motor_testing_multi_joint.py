@@ -24,7 +24,6 @@ time.sleep(1)
 supervisor.enable(1)
 supervisor.enable(2)
 supervisor.enable(3)
-print("Motor enabled")
 
 # Select active motor
 active_ids = [1,2]
@@ -39,6 +38,7 @@ while not initials_gotten:
         initial_pos_2 = math.radians(state[1].position)
         initial_vel_2 = math.radians(state[1].velocity)
         initials_gotten = True
+        print("Motor enabled")
 
 # System parameters - J1 spinning J2, no J3 attached
 # J1 - Bandwidth = 35.0, vel_deadzone = 0.1, everything else default
@@ -63,9 +63,9 @@ if relative_pos_1:
     ip = 0.0
 else:
     ip = initial_pos_1
-controller_1 = PD_Controller(timestep=T, gear_ratio=gear_ratio_1, inertia=total_inertia_1, bandwidth=15.0, Kd_correction=1.0, 
-                            anti_windup_trq=6.0, pos_deadzone=0.1, vel_deadzone=0.1,
-                            initial_pos=ip, initial_vel=initial_vel_1, joint_limits=[3, -3])
+controller_1 = PD_Controller(timestep=T, gear_ratio=gear_ratio_1, inertia=total_inertia_1, bandwidth=10.0, Kd_correction=1.0, 
+                            anti_windup_trq=6.0, pos_deadzone=0.005, vel_deadzone=0.1,
+                            initial_pos=ip, initial_vel=initial_vel_1, joint_limits=[-3, -3])
 # J2
 if relative_pos_2:
     ip = 0.0
@@ -77,16 +77,16 @@ controller_2 = PD_Controller(timestep=T, gear_ratio=gear_ratio_2, inertia=total_
 
 
 # Trajectorty Parameters
-setpoint_1 = 1
-setpoint_2 =-1
-move_time = 1
+setpoint_1 = 1.5
+setpoint_2 = 0.001
+move_time = 0.5
 
 # Motors and Logging
 motor_ids = [1, 2, 3]
 data = {motor_id: {"time": [], "position": [], "velocity": [], "torque": [], "pos_ref":[], "vel_ref":[], "vel_pred":[], "pos_pred":[]} for motor_id in motor_ids}
 
 # Misc
-max_time = move_time + 3
+max_time = move_time + 15
 
 # Main Control Loop
 def control_thread():
@@ -99,7 +99,7 @@ def control_thread():
         # Check for shutdown
         if (elapsed > max_time):
             supervisor.command_actuators(
-                [RobstrideActuatorCommand(actuator_id=active_ids[0], position=0.0, velocity=0.0, torque=0),
+                [RobstrideActuatorCommand(actuator_id=active_ids[0], position=0.0, velocity=0.0, torque=0.0),
                  RobstrideActuatorCommand(actuator_id=active_ids[1], position=0.0, velocity=0.0, torque=0)])
             supervisor.disable(1)
             supervisor.disable(2)

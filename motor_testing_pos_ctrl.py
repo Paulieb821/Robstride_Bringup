@@ -4,8 +4,6 @@ import time
 import threading
 import matplotlib.pyplot as plt
 import numpy as np
-from joint_control_utils.PID_Controller import PID_Controller
-from joint_control_utils.PD_Controller import PD_Controller
 from joint_control_utils.Joint_Trajectories import cubic_trajectory, quintic_trajectory
 from actuator import RobstrideActuator, RobstrideActuatorConfig, RobstrideActuatorCommand, RobstrideConfigureRequest
 from plot import Plot
@@ -26,7 +24,7 @@ supervisor.enable(2)
 supervisor.enable(3)
 
 # Select active motor
-active_id = 1
+active_id = 2
 
 # Get initial values
 initials_gotten = False
@@ -38,63 +36,25 @@ while not initials_gotten:
         initials_gotten = True
         print("Motor enabled")
 
-# System parameters - RS01 on 2.5kg pendulum arm
-# Bandwidth = 30.0, no deadzones
-# rotor_inertia = 0.01
-# added_inertia = (1.2 * 0.3**2 + 0.224 * 0.3**2/3)
-# total_inertia = rotor_inertia + added_inertia
-# comp_trq = 1.2 * 0.3 * 9.81 * (1.1 + 0.224/2)
-# gear_ratio = 1
-# relative_pos = True
+# Change motor operating mode
+result = supervisor.configure_actuator(RobstrideConfigureRequest(actuator_id=active_id, torque_enabled=True, kp=60.0, kd=3.0, max_torque=6.0))
+print(result)
 
-# System parameters - Elbow
-# Bandwidth = 30.0, no deadzones
-# rotor_inertia = 0.3
-# added_inertia = 0.0
-# total_inertia = rotor_inertia + added_inertia
-# comp_trq = 0.0
-# gear_ratio = 3
-# relative_pos = False
-
-# System parameters - J1 spinning J2
-# Bandwidth = 35.0, vel_deadzone = 0.1, everything else default
-# rotor_inertia = 0.01
-# added_inertia = 0.011729
-# total_inertia = rotor_inertia + added_inertia
-# comp_trq = 0.0
-# gear_ratio = 1
-# relative_pos = False
-
-# System parameters - J2 in bracket
-# Bandwidth = 30.0, everything else default
-rotor_inertia = 0.1
-added_inertia = 0.0
-total_inertia = rotor_inertia + added_inertia
-comp_trq = 0.0 #0.3 * 9.81 * (1.1 * 0.75  + 0.224 * 0.5)
+# Motor Parameters
+relative_pos = False
 gear_ratio = 1
-relative_pos = True
-
-# Initialize controller
-T = 0.01
-if relative_pos:
-    ip = 0.0
-else:
-    ip = initial_pos
-controller = PD_Controller(timestep=T, gear_ratio=gear_ratio, inertia=total_inertia, bandwidth=15.0, Kd_correction=1.0, 
-                            anti_windup_trq=6.0, pos_deadzone=0.1, vel_deadzone=0.0,
-                            initial_pos=ip, initial_vel=initial_vel, joint_limits=[3, -3])
-
+T = 0.02
 
 # Trajectorty Parameters
-setpoint = 0.05 
-move_time = 20
+setpoint = -1.57
+move_time = 1
 
 # Motors and Logging
 motor_ids = [1, 2, 3]
 data = {motor_id: {"time": [], "position": [], "velocity": [], "torque": [], "pos_ref":[], "vel_ref":[], "vel_pred":[], "pos_pred":[]} for motor_id in motor_ids}
 
 # Misc
-max_time = move_time + 3
+max_time = move_time + 20
 
 # Main Control Loop
 def control_thread():
@@ -106,8 +66,7 @@ def control_thread():
         elapsed = time.time() - start_time
         # Check for shutdown
         if (elapsed > max_time):
-            supervisor.command_actuators(
-                [RobstrideActuatorCommand(actuator_id=active_id, position=0.0, velocity=0.0, torque=0)])
+            supervisor.command_actuators([RobstrideActuatorCommand(actuator_id=active_id, position=0.0, velocity=0.0, torque=0.0)])
             supervisor.disable(1)
             supervisor.disable(7)
             supervisor.disable(3)
@@ -117,7 +76,7 @@ def control_thread():
             pos_ref, vel_ref, acc_ref = quintic_trajectory(0.0, setpoint, move_time, elapsed)
         else:
             pos_ref, vel_ref, acc_ref = quintic_trajectory(initial_pos/gear_ratio, setpoint, move_time, elapsed)
-        # Get motor state
+        # Read state
         state = supervisor.get_actuators_state([active_id])
         if state:
             # Process position and velocity
@@ -126,21 +85,22 @@ def control_thread():
             else:
                 pos = math.radians(state[0].position)
             vel = math.radians(state[0].velocity)
-            # Calculate torque using PID controller
-            cmd_trq = controller.update_controller(pos, vel, pos_ref, vel_ref, acc_ref, comp_trq)
-            # Send out command
+            print(round(state[0].torque,2))
+            print("Ref: ", round(pos_ref,2), "Real: ", round(pos,2))
+            # Send position command
+            comp_trq = 1.2 * 0.3 * 9.81 * (1.1 * 0.75  + 0.224 * 0.5) * np.sin(pos)
             supervisor.command_actuators(
-                [RobstrideActuatorCommand(actuator_id=active_id, position=15, velocity=0.0, torque=0.0)]
+                [RobstrideActuatorCommand(actuator_id=active_id, position=np.rad2deg(pos_ref), velocity=np.rad2deg(vel_ref), torque=comp_trq)]
             )
             # Data Logging
             data[active_id]["time"].append(elapsed)
             data[active_id]["position"].append(pos/gear_ratio)
             data[active_id]["velocity"].append(vel/gear_ratio)
-            data[active_id]["torque"].append(cmd_trq)
+            #data[active_id]["torque"].append(cmd_trq)
             data[active_id]["pos_ref"].append(pos_ref)
             data[active_id]["vel_ref"].append(vel_ref)
-            data[active_id]["pos_pred"].append(controller.xhat[0,0])
-            data[active_id]["vel_pred"].append(controller.xhat[1,0])
+            #data[active_id]["pos_pred"].append(controller.xhat[0,0])
+            #data[active_id]["vel_pred"].append(controller.xhat[1,0])
         else: 
             print("Didn't get state")
 
@@ -161,6 +121,6 @@ except KeyboardInterrupt:
     supervisor.disable(7)
     supervisor.disable(3)
 finally:
-    plotter = Plot(data)
-    plotter.plot_motor_data()
+    #plotter = Plot(data)
+    #plotter.plot_motor_data()
     print("Exiting control loop.")

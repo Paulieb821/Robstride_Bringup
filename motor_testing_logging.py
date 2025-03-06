@@ -26,13 +26,13 @@ def monitor_thread():
 
     loop_start = time.time()
     while True:
-        state = supervisor.get_actuators_state([3])
+        state = supervisor.get_actuators_state([2])
         if state:
             pos = math.radians(state[0].position)
-            # print("Motor 1 Position:", round(pos, 2))
-            print("Motor 4 Position:", round(pos, 2))
-            print("Joint Position:", round(pos/3, 2))
-            print("")
+            print("Motor 1 Position:", round(pos, 2))
+            # print("Motor 4 Position:", round(pos, 2))
+            # print("Joint Position:", round(pos/3, 2))
+            # print("")
         else:
             print("failed")
         time.sleep(0.01)
@@ -45,7 +45,7 @@ def monitor_thread():
         # time.sleep(0.01)
 
 
-        # state = supervisor.get_actuators_state([1,7,3])
+        # state = supervisor.get_actuators_state([1,2,3])
         # if state and len(state)==3:
         #     print("J1:", round(state[0].position), "J2:", round(state[1].position), "J3:", round(state[2].position))
         # else:
@@ -55,7 +55,7 @@ def monitor_thread():
         #         if len(state) == 2:
         #             print("Failed. Working Motors: ", state[0].actuator_id, state[1].actuator_id)
         
-        time.sleep(0.1)
+        # time.sleep(0.01)
 
 monitor = threading.Thread(target=monitor_thread)
 
