@@ -1,0 +1,93 @@
+import can
+import robstride
+import time
+import numpy as np
+
+with can.Bus() as bus:
+    rs_client = robstride.Client(bus)
+
+    # Parameters
+    motorID = 2
+    testTime = 10    # Seconds
+    bandwidth = 1   # SysID tuning parameter
+    amp = 0.5       # Current sine wave in amps --> be careful!!!!
+    freq = 1.5      # Current sine wave in Hz
+
+    # Enable and Zero Motor
+    rs_client.write_param(2, 'run_mode', robstride.RunMode.Position)
+    rs_client.enable(2)
+    rs_client.write_param(2, 'loc_ref', 0)
+    print("Motor Zeroed")
+    time.sleep(3)
+
+    # Change to Current Mode
+    rs_client.disable(2)
+    rs_client.write_param(2, 'run_mode', robstride.RunMode.Current)
+    rs_client.enable(2)
+
+    
+    # Set Up Collection Arrays
+    timeArr = []
+    currentArr = []
+    velocityArr = []
+
+    # Run sinusoidal data collection
+    startTime = time.time()
+    print("Test starting")
+    while True:
+        # Get elapsed time and check for end of text
+        elapsed = time.time() - startTime
+        if elapsed > testTime:
+            break
+        # Command new current
+        cur_cmd = amp*np.sin(freq*elapsed)
+        rs_client.write_param(2, 'iq_ref', cur_cmd)
+        # Read back params
+        timeArr.append(elapsed)
+        currentArr.append(rs_client.read_param(2, 'iqf'))
+        print(currentArr[-1])
+        velocityArr.append(rs_client.read_param(2, 'mechvel'))
+    print("Test finished")
+
+    # Run SysID
+    # Setup
+    y = np.array(velocityArr)
+    u = np.array(currentArr)
+
+    # Lambdas
+    L0 = bandwidth**2
+    L1 = 2*bandwidth
+
+    # Solve for necessary signals
+    filtered_y = np.zeros((2, len(y)))
+    filtered_u = np.zeros((2, len(u)))
+    diff_eq_mat = np.array([[0, 1], [-L0, -L1]])
+    diff_eq_vec = np.array([[0], [L0]])
+    filtered_y[:,0] = np.array([y[0], 0])
+    for i in range(len(timeArr)-1):
+        dt = timeArr[i+1] - timeArr[i]
+        filtered_y[:,i+1] = np.reshape(np.reshape(filtered_y[:,i], (-1, 1)) + (diff_eq_mat @ np.reshape(filtered_y[:,i], (-1, 1)) + diff_eq_vec * y[i]) * dt, -1)
+        filtered_u[:,i+1] = np.reshape(np.reshape(filtered_u[:,i], (-1, 1)) + (diff_eq_mat @ np.reshape(filtered_u[:,i], (-1, 1)) + diff_eq_vec * u[i]) * dt, -1)
+
+    # Set up vectors
+    cursive_y = filtered_y[1,:]
+    cursive_u = np.vstack((filtered_u[0,:], -filtered_y[0,:]))
+    
+    # Solve for system
+    U_matrix = cursive_u @ cursive_u.T
+    Y_matrix = cursive_u @ cursive_y.T
+    cursive_P = np.linalg.pinv(U_matrix) @ Y_matrix
+
+    # Get system parameters
+    b0 = cursive_P[0]
+    a0 = cursive_P[1]
+
+    J = 1/b0
+    c = a0/b0
+
+    print("Inertia:", J)
+    print("Damping:", c)
+        
+
+    # Finally deactivate the motor
+    rs_client.disable(2)
