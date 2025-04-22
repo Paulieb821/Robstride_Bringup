@@ -8,6 +8,7 @@ from robot_control_utils.TrajectoryPlanner import TrajectoryPlanner6dof as traje
 
 # Mujoco configuration
 urdf_path = 'robot_models/Sim_Arm_4DOF_Mar_25/robot.xml'
+#urdf_path = 'robot_models/4dof_arm_v2/4dof_arm_v2.xml'
 site_name = 'endeff'
 command_rate = 50
 
@@ -28,8 +29,10 @@ traj.addLinearMove_3dof(np.array([0, 0.2, 0.8]), 2)
 # Adjust for gear ratio and CW vs CCW
 traj.pos_ref[:,0] = traj.pos_ref[:,0] * -1
 traj.vel_ref[:,0] = traj.vel_ref[:,0] * -1
-traj.pos_ref[:,2] = traj.pos_ref[:,2] * -3
-traj.vel_ref[:,2] = traj.vel_ref[:,2] * -3
+traj.pos_ref[:,1] = traj.pos_ref[:,1] * -1
+traj.vel_ref[:,1] = traj.vel_ref[:,1] * -1
+traj.pos_ref[:,3] = traj.pos_ref[:,3] * -3
+traj.vel_ref[:,3] = traj.vel_ref[:,3] * -3
 
 # Run Trajectory
 with can.Bus() as bus:
