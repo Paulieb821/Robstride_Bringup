@@ -4,6 +4,8 @@ import robstride
 import time
 import numpy as np
 import pynput.keyboard as keyboard
+from robot_control_utils.workspace import within_workspace
+
 
 from robot_control_utils.TrajectoryPlanner import TrajectoryPlanner6dof as trajectory_planner
 from robot_control_utils.NRIK import NRIK
@@ -72,6 +74,8 @@ def on_release(key):
         elif key == keyboard.Key.down:
             key_states['down'] = False
 
+
+
 listener = keyboard.Listener(on_press=on_press, on_release=on_release)
 listener.start()
 
@@ -118,6 +122,10 @@ with can.Bus() as bus:
 
         # Update position
         endeff_pos += velocity
+
+        # Check if updated position is valid (need to make sure it is part of the workspace)
+        if not within_workspace(endeff_pos):
+            continue
 
         # Solve IK
         joint_pos = ik.solveIK_3dof(endeff_pos)
