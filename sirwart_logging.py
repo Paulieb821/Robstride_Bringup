@@ -5,6 +5,7 @@ import numpy as np
 
 with can.Bus() as bus:
     rs_client = robstride.Client(bus)
+    time.sleep(0.5)
 
     # Disable to prevent any holding
     rs_client.disable(1)
