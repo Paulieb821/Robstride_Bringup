@@ -4,7 +4,7 @@ import robstride
 import time
 import numpy as np
 import pynput.keyboard as keyboard
-from robot_control_utils.workspace import within_workspace
+from robot_control_utils.workspace import Workspace
 
 
 from robot_control_utils.TrajectoryPlanner import TrajectoryPlanner6dof as trajectory_planner
@@ -31,6 +31,9 @@ joint_pos = ik.solveIK_3dof(endeff_pos)
 
 # Velocity smoothing
 velocity = np.zeros(3)
+
+# Workspace object
+util = Workspace(urdf_path, model, data, ik, max_reach=0.6, min_reach=0.1)
 
 # Key states
 key_states = {
@@ -124,7 +127,7 @@ with can.Bus() as bus:
         endeff_pos += velocity
 
         # Check if updated position is valid (need to make sure it is part of the workspace)
-        if not within_workspace(endeff_pos):
+        if not util.within_workspace(endeff_pos):
             continue
 
         # Solve IK
