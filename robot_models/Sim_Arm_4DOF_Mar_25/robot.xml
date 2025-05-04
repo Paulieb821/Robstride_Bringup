@@ -30,6 +30,8 @@
   </contact>
   
   <worldbody>
+    <!--Workspace visualization-->\
+    <site name="manip_sphere" pos="0.0 0.0 0.115" size="0.8" rgba="1 0 0 0.25"/>
     <!-- Link rs01_sim -->
     <body name="root" pos="0 0 0" quat="1 0 0 0" childclass="Sim_Arm_4DOF_Mar_25">
       <inertial pos="5.67174e-05 -0.123231 -0.322029" mass="3.61283" fullinertia="0.122389 0.109538 0.0200598 -2.70646e-05 -7.12059e-05 -0.0369225"/>

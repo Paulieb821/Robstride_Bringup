@@ -90,6 +90,8 @@ with can.Bus() as bus:
     rs_client.enable(4)
 
     while True:
+        # Get loop start time
+        time.perf_counter()
         # Determine direction
         direction = np.zeros(3)
         if key_states['a']:
@@ -130,5 +132,3 @@ with can.Bus() as bus:
         rs_client.write_param(4, 'loc_ref', -3 * joint_pos[3])
 
         time.sleep(1 / command_rate)
-
-        #swwwwwwwwwwwwwww
