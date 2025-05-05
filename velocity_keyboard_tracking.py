@@ -99,7 +99,7 @@ with can.Bus() as bus:
 
     # Enable motors
     for id in motor_ids:
-        rs_client.enable(id)  # FIXED from hardcoded 1 to id
+        rs_client.enable(id)  
 
     # Initialize speed tracker
     speed = 0
@@ -117,7 +117,12 @@ with can.Bus() as bus:
 
     print("Initialization Completed")
 
+
     while True:
+        # Read motor positions, this make J2 happy for some reason
+        for id in motor_ids:
+            rs_client.read_param(id, 'mechpos')
+
         # Compute direction
         temp_direction = np.zeros((3,1))
         if key_states['a']:
@@ -141,15 +146,17 @@ with can.Bus() as bus:
             speed = min(max_speed, speed + accel / command_rate)
         
         # If speed command is 0, change motors to position mode for better placeholding
+        # TODO: Make this actually work, for now just sending zero velocities and it works pretty well
         if speed < 0.0001 and not key_states['1'] and not key_states['2']:
-            if mode != 'pos' or True:
+            if mode != 'pos':
                 mode = 'pos'
                 # Update joint angles
                 # for i, id in enumerate(motor_ids):
                 #     pos = rs_client.read_param(id, 'mechpos')
                 #     rs_client.write_param(id, 'loc_ref', pos)
                 #     rs_client.write_param(id, 'run_mode', robstride.RunMode.Position)
-            print("Holding")
+            for i, id in enumerate(motor_ids):
+                rs_client.write_param(id, 'spd_ref', 0 * motor_ratios[i])
 
         # Otherwise send out velocity command
         else:
@@ -177,6 +184,30 @@ with can.Bus() as bus:
                 data.qpos = temp_joint_angles
                 mj.mj_forward(model, data)
 
+                # Check if we've left reachable sphere
+                dist_from_center = site.xpos - reachable_sphere_center
+                outside = np.linalg.norm(dist_from_center) > reachable_sphere_radius
+
+                if outside:
+                    # You're outside, but check direction of motion
+                    if np.dot(dist_from_center, speed_vec.flatten()) > 0:
+                        # Still trying to go further out — block it
+                        joint_vels = np.zeros(len(joint_angles))
+                        speed = 0
+                        print("Command exceeds reachable zone! Motion blocked")
+                    else:
+                        # Outside but trying to return — allow it
+                        joint_angles = temp_joint_angles
+                        mj.mj_jacSite(model, data, jac_pos, jac_rot, site.id)
+                        joint_vels = (np.linalg.pinv(jac_pos) @ speed_vec).flatten()
+                        print("Outside boundary, returning inward")
+                        
+                else:
+                    # Safe — compute normally
+                    joint_angles = temp_joint_angles
+                    mj.mj_jacSite(model, data, jac_pos, jac_rot, site.id)
+                    joint_vels = (np.linalg.pinv(jac_pos) @ speed_vec).flatten()
+
                 # Check if we've left reachable sphere, reset MJCF, and emergency stop
                 dist_from_center = site.xpos - reachable_sphere_center
                 if np.linalg.norm(dist_from_center) > reachable_sphere_radius:
@@ -193,17 +224,14 @@ with can.Bus() as bus:
                     joint_vels = (np.linalg.pinv(jac_pos) @ speed_vec).flatten()
 
             # Change motor mode to velocity
-            if mode != 'vel' or True:
+            if mode != 'vel':
                 mode = 'vel'
                 for id in motor_ids:
                     rs_client.write_param(id, 'run_mode', robstride.RunMode.Speed)
 
             # Send motor commands (use ratio to make sure motors behave correctly)
-            # for i, id in enumerate(motor_ids):
-            #     rs_client.write_param(id, 'spd_ref', joint_vels[i] * motor_ratios[i])  # FIXED indexing
-            rs_client.write_param(1, 'spd_ref', joint_vels[0] * motor_ratios[i])
-            
-
-            print("Moving")
+            print(joint_vels)
+            for i, id in enumerate(motor_ids):
+                rs_client.write_param(id, 'spd_ref', joint_vels[i] * motor_ratios[i])  # FIXED indexingwwwwwww
 
         time.sleep(1 / command_rate)
