@@ -1,63 +1,25 @@
-import pigpio
-import time
 
-class ServoController:
-    def __init__(self, pi, gpio_pin, min_angle=0, max_angle=270, min_pulse=500, max_pulse=2500):
-        """
-        pi: pigpio.pi() object
-        gpio_pin: GPIO pin for the servo
-        min_angle: minimum angle
-        max_angle: maximum angle 
-        min_pulse: pulse width at min_angle (μs)
-        max_pulse: pulse width at max_angle (μs)
-        these  values are based on https://www.hiwonder.com/products/hps-3527sg
-        """
-        self.pi = pi
-        self.gpio_pin = gpio_pin
-        self.min_angle = min_angle
-        self.max_angle = max_angle
-        self.min_pulse = min_pulse
-        self.max_pulse = max_pulse
+from gpiozero import AngularServo
+from time import sleep
 
-        self.pi.set_mode(gpio_pin, pigpio.OUTPUT)
-        self.stop()
+servo = AngularServo(18, min_angle=0, max_angle=270, min_pulse_width=0.5/1000,max_pulse_width=2.5/ 1000)
+while True:
+    servo.angle = 0  # Set the servo to 0 degrees
+    sleep(1)  # Wait for 1 second
+    servo.angle = 90  # Set the servo to 90 degrees
+    sleep(1)  # Wait for 1 second
+    servo.angle = 180  # Set the servo to 180 degrees
+    sleep(1)  # Wait for 1 second
+    servo.angle = 270  # Set the servo to 270 degrees
+    sleep(1)  # Wait for 1 second    
 
-    def set_angle(self, angle):
-        if angle < self.min_angle:
-            angle = self.min_angle
-        if angle > self.max_angle:
-            angle = self.max_angle
 
-        # Map angle to pulse width
-        pulse_width = self.min_pulse + (angle - self.min_angle) / (self.max_angle - self.min_angle) * (self.max_pulse - self.min_pulse)
-        self.pi.set_servo_pulsewidth(self.gpio_pin, pulse_width)
+    # for angle in range(0, 271, 1):  # sweep from 0° to 270°
+    #     servo.angle = angle
+    #     sleep(0.001)
 
-    def stop(self):
-        self.pi.set_servo_pulsewidth(self.gpio_pin, 0)
+    # for angle in range(270, -1, -1):  # sweep back from 270° to 0°
+    #     servo.angle = angle
+    #     sleep(0.001)
 
-if __name__ == "__main__":
-    pi = pigpio.pi()
-    if not pi.connected:
-        print("Failed to connect to pigpio daemon!")
-        exit()
 
-    # Servo 1 on GPIO 17, 0° to 270°
-    servo1 = ServoController(pi, 17)
-    # Servo 2 on GPIO 18, 0° to 270°
-    servo1 = ServoController(pi, 17)
-
-    try:
-        while True:
-            for angle in range(0, 271, 15):  # sweep from 0° to 270°
-                servo1.set_angle(angle)
-                time.sleep(0.05)
-
-            for angle in range(270, -1, -15):  # sweep back from 270° to 0°
-                servo1.set_angle(angle)
-                time.sleep(0.05)
-
-    except KeyboardInterrupt:
-        print("\nStopping...")
-    finally:
-        servo1.stop()
-        pi.stop()
