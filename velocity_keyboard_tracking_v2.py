@@ -25,7 +25,7 @@ reachable_sphere_radius = 0.8
 # Hybrid hold tuning
 Kp_hold = 10.0
 max_hold_speed = 2
-wwwwwwwwwwwwwwwwssssssssssssssss
+
 # Load MuJoCo model
 model = mj.MjModel.from_xml_path(urdf_path)
 data = mj.MjData(model)
