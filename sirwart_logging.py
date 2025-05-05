@@ -7,27 +7,26 @@ with can.Bus() as bus:
     rs_client = robstride.Client(bus)
     time.sleep(0.5)
 
+    motors_to_log = [1, 2, 3, 4]
+
     # Disable to prevent any holding
-    rs_client.disable(1)
-    rs_client.disable(2)
-    rs_client.disable(3)
-    rs_client.disable(4)
+    for id in motors_to_log:
+        rs_client.disable(id)
 
     # First set the run mode to position
-    rs_client.write_param(1, 'run_mode', robstride.RunMode.Operation)
-    rs_client.write_param(2, 'run_mode', robstride.RunMode.Operation)
-    rs_client.write_param(3, 'run_mode', robstride.RunMode.Operation)
-    rs_client.write_param(4, 'run_mode', robstride.RunMode.Operation)
+    for id in motors_to_log:
+        rs_client.write_param(id, 'run_mode', robstride.RunMode.Position)
     
     # Then enable the motor
-    rs_client.enable(1)
-    rs_client.enable(2)
-    rs_client.enable(3)
-    rs_client.enable(4)
+    for id in motors_to_log:
+        rs_client.enable(id)
 
     while True:
-        pos1 = rs_client.read_param(1, 'mechpos')
-        pos2 = rs_client.read_param(2, 'mechpos')
-        pos3 = rs_client.read_param(3, 'mechpos')
-        pos4 = rs_client.read_param(4, 'mechpos')
-        print("J1:", round(pos1, 2), "J2:", round(pos2, 2), "J3:", round(pos3, 2), "J4:", round(pos4, 2))
+        positions = []
+        for id in motors_to_log:
+            pos = rs_client.read_param(id, 'mechpos')
+            positions.append(round(pos, 2))
+
+        # Create a dynamic print string like "J1: 12.3 J2: 45.6 ..."
+        output = ' '.join([f"J{motor_id}: {pos}" for motor_id, pos in zip(motors_to_log, positions)])
+        print(output)

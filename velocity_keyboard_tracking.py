@@ -20,6 +20,9 @@ null_speed = 0.2    # Speed at which J1 moves through the null space rad/s
 # Flip and gear ratio factors between joints and MJCF
 motor_ratios = np.array([-1, -1, 1, -3])
 
+# List of motor ID's for looping through and setting stuff
+motor_ids = [1, 2, 3, 4]
+
 # Coordinates and size of maximum reachable sphere (determined offline for now)
 reachable_sphere_center = np.array([0, 0, 0.115])
 reachable_sphere_radius = 0.8
@@ -91,15 +94,12 @@ with can.Bus() as bus:
     rs_client = robstride.Client(bus)
 
     # Initialize joints in position mode
-    rs_client.write_param(1, 'run_mode', robstride.RunMode.Position)
-    rs_client.write_param(2, 'run_mode', robstride.RunMode.Position)
-    rs_client.write_param(3, 'run_mode', robstride.RunMode.Position)
-    rs_client.write_param(4, 'run_mode', robstride.RunMode.Position)
+    for id in motor_ids:
+        rs_client.write_param(id, 'run_mode', robstride.RunMode.Position)
 
-    rs_client.enable(1)
-    rs_client.enable(2)
-    rs_client.enable(3)
-    rs_client.enable(4)
+    # Enable motors
+    for id in motor_ids:
+        rs_client.enable(id)  # FIXED from hardcoded 1 to id
 
     # Initialize speed tracker
     speed = 0
@@ -111,12 +111,11 @@ with can.Bus() as bus:
     direction = np.zeros((3,1))
 
     # Record initial joint angles
-    joint_angles = np.zeros(4)
-    joint_angles[0] = rs_client.read_param(1, 'mech_pos') / motor_ratios[0]
-    joint_angles[1] = rs_client.read_param(2, 'mech_pos') / motor_ratios[1]
-    joint_angles[2] = rs_client.read_param(3, 'mech_pos') / motor_ratios[2]
-    joint_angles[3] = rs_client.read_param(4, 'mech_pos') / motor_ratios[3]
-    
+    joint_angles = np.zeros(len(motor_ids))
+    for i, id in enumerate(motor_ids):
+        joint_angles[i] = rs_client.read_param(id, 'mechpos') / motor_ratios[i]  # FIXED indexing
+
+    print("Initialization Completed")
 
     while True:
         # Compute direction
@@ -134,7 +133,7 @@ with can.Bus() as bus:
         if key_states['s']:
             temp_direction[1] += -1
 
-        # If no keys pressed, start slowing dow
+        # If no keys pressed, start slowing down
         if np.linalg.norm(temp_direction) < 0.0001:
             speed = max(0, speed - accel / command_rate)
         else:
@@ -143,12 +142,14 @@ with can.Bus() as bus:
         
         # If speed command is 0, change motors to position mode for better placeholding
         if speed < 0.0001 and not key_states['1'] and not key_states['2']:
-            if mode != 'pos':
+            if mode != 'pos' or True:
                 mode = 'pos'
-                rs_client.write_param(1, 'run_mode', robstride.RunMode.Position)
-                rs_client.write_param(2, 'run_mode', robstride.RunMode.Position)
-                rs_client.write_param(3, 'run_mode', robstride.RunMode.Position)
-                rs_client.write_param(4, 'run_mode', robstride.RunMode.Position)
+                # Update joint angles
+                # for i, id in enumerate(motor_ids):
+                #     pos = rs_client.read_param(id, 'mechpos')
+                #     rs_client.write_param(id, 'loc_ref', pos)
+                #     rs_client.write_param(id, 'run_mode', robstride.RunMode.Position)
+            print("Holding")
 
         # Otherwise send out velocity command
         else:
@@ -161,18 +162,16 @@ with can.Bus() as bus:
                 else:
                     joint_vels = -null_speed * null_vec_unit_j1_speed
 
-            # Position contol - end effector moves through space
+            # Position control - end effector moves through space
             else:
                 # Compute speed vector
                 normalized_direction = direction / np.linalg.norm(direction)
                 speed_vec = speed * normalized_direction
 
                 # Get motor angles
-                temp_joint_angles = np.zeros(4)
-                temp_joint_angles[0] = rs_client.read_param(1, 'mech_pos') / motor_ratios[0]
-                temp_joint_angles[1] = rs_client.read_param(2, 'mech_pos') / motor_ratios[1]
-                temp_joint_angles[2] = rs_client.read_param(3, 'mech_pos') / motor_ratios[2]
-                temp_joint_angles[3] = rs_client.read_param(4, 'mech_pos') / motor_ratios[3]
+                temp_joint_angles = np.zeros(len(motor_ids))
+                for i, id in enumerate(motor_ids):
+                    temp_joint_angles[i] = rs_client.read_param(id, 'mechpos') / motor_ratios[i]  # FIXED indexing
 
                 # Update MJCF and get position jacobian
                 data.qpos = temp_joint_angles
@@ -183,7 +182,7 @@ with can.Bus() as bus:
                 if np.linalg.norm(dist_from_center) > reachable_sphere_radius:
                     if np.dot(dist_from_center, speed_vec.flatten()) > 0:
                         # Moving further out — cancel motion
-                        joint_vels = np.zeros(joint_angles.size)
+                        joint_vels = np.zeros(len(joint_angles))
                         speed = 0
                         print("Command exceeds reachable zone! Motion blocked")
 
@@ -194,17 +193,17 @@ with can.Bus() as bus:
                     joint_vels = (np.linalg.pinv(jac_pos) @ speed_vec).flatten()
 
             # Change motor mode to velocity
-            if mode != 'vel':
+            if mode != 'vel' or True:
                 mode = 'vel'
-                rs_client.write_param(1, 'run_mode', robstride.RunMode.Speed)
-                rs_client.write_param(2, 'run_mode', robstride.RunMode.Speed)
-                rs_client.write_param(3, 'run_mode', robstride.RunMode.Speed)
-                rs_client.write_param(4, 'run_mode', robstride.RunMode.Speed)
+                for id in motor_ids:
+                    rs_client.write_param(id, 'run_mode', robstride.RunMode.Speed)
 
             # Send motor commands (use ratio to make sure motors behave correctly)
-            rs_client.write_param(1, 'spd_ref', joint_vels[0] * motor_ratios[0])
-            rs_client.write_param(2, 'spd_ref', joint_vels[1] * motor_ratios[1])
-            rs_client.write_param(3, 'spd_ref', joint_vels[2] * motor_ratios[2])
-            rs_client.write_param(4, 'spd_ref', joint_vels[3] * motor_ratios[3])
+            # for i, id in enumerate(motor_ids):
+            #     rs_client.write_param(id, 'spd_ref', joint_vels[i] * motor_ratios[i])  # FIXED indexing
+            rs_client.write_param(1, 'spd_ref', joint_vels[0] * motor_ratios[i])
+            
+
+            print("Moving")
 
         time.sleep(1 / command_rate)
