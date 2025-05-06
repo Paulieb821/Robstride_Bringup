@@ -22,17 +22,13 @@ traj = trajectory_planner(model, data, site, [0.0, 0.0, 0.0, 0.0], command_rate)
 traj.addHold(3)
 traj.addLinearMove_3dof(np.array([0, 0.4, 0.1]), 2)
 traj.addLinearMove_3dof(np.array([0, 0.7, 0.1]), 2)
-traj.addLinearMove_3dof(np.array([0.35, 0.5, 0.2]), 1)
-traj.addLinearMove_3dof(np.array([-0.35, 0.5, 0.2]), 1)
-traj.addLinearMove_3dof(np.array([0.35, 0.5, 0.2]), 1)
-traj.addLinearMove_3dof(np.array([-0.35, 0.5, 0.2]), 1)
-traj.addLinearMove_3dof(np.array([0.35, 0.5, 0.2]), 1)
-traj.addLinearMove_3dof(np.array([-0.35, 0.5, 0.2]), 1)
-traj.addLinearMove_3dof(np.array([0.35, 0.5, 0.2]), 1)
-traj.addLinearMove_3dof(np.array([-0.35, 0.5, 0.2]), 1)
+traj.addLinearMove_3dof(np.array([0.35, 0.5, 0.2]), 2)
+traj.addLinearMove_3dof(np.array([-0.35, 0.5, 0.2]), 2)
 traj.addLinearMove_3dof(np.array([0, 0.5, 0.4]), 2)
 traj.addLinearMove_3dof(np.array([0, 0.2, 0.8]), 2)
+
 # Adjust for gear ratio and CW vs CCW
+
 traj.pos_ref[:,0] = traj.pos_ref[:,0] * -1
 traj.vel_ref[:,0] = traj.vel_ref[:,0] * -1
 traj.pos_ref[:,1] = traj.pos_ref[:,1] * -1

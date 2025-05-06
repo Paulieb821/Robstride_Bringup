@@ -18,7 +18,7 @@ accel = 0.4         # Acceleration on start/stop to avoid vibration
 null_speed = 0.2    # Speed at which J1 moves through the null space rad/s
 
 # Flip and gear ratio factors between joints and MJCF
-motor_ratios = np.array([-1, -1, 1, -3])
+motor_ratios = np.array([-1, 1, 1, -3]) 
 
 # List of motor ID's for looping through and setting stuff
 motor_ids = [1, 2, 3, 4]
@@ -150,13 +150,12 @@ with can.Bus() as bus:
         if speed < 0.0001 and not key_states['1'] and not key_states['2']:
             if mode != 'pos':
                 mode = 'pos'
-                # Update joint angles
-                # for i, id in enumerate(motor_ids):
-                #     pos = rs_client.read_param(id, 'mechpos')
-                #     rs_client.write_param(id, 'loc_ref', pos)
-                #     rs_client.write_param(id, 'run_mode', robstride.RunMode.Position)
-            for i, id in enumerate(motor_ids):
-                rs_client.write_param(id, 'spd_ref', 0 * motor_ratios[i])
+                for i, id in enumerate(motor_ids):
+                    rs_client.disable(id)
+                    rs_client.enable(id)
+                    rs_client.write_param(id, 'run_mode', robstride.RunMode.Position)
+            # for i, id in enumerate(motor_ids):
+            #     rs_client.write_param(id, 'spd_ref', 0 * motor_ratios[i])
 
         # Otherwise send out velocity command
         else:

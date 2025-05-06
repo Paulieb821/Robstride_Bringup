@@ -52,3 +52,18 @@ ERROR: could not create window
 Mon May  5 20:41:26 2025
 ERROR: could not create window
 
+Mon May  5 20:52:23 2025
+ERROR: could not create window
+
+Mon May  5 20:55:33 2025
+ERROR: could not create window
+
+Mon May  5 20:56:06 2025
+ERROR: could not create window
+
+Mon May  5 20:56:46 2025
+ERROR: could not create window
+
+Tue May  6 16:32:35 2025
+ERROR: could not create window
+
