@@ -8,7 +8,7 @@ import pynput.keyboard as keyboard
 import scipy.linalg
 
 # Mujoco configuration
-urdf_path = 'robot_models/Sim_Arm_4DOF_Mar_25/robot.xml'
+urdf_path = 'robot_models/Sim_Arm_4DOF_May_25/robot.xml'
 site_name = 'endeff'
 
 # Control settings
