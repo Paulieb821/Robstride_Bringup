@@ -7,7 +7,7 @@ class Keyboard_Listener:
         self.key_states = {
             'a': False, 'd': False, 'w': False, 's': False,
             '1': False, '2': False, 'up': False, 'down': False,
-            'space': False
+            'space': False, 'o': False, 'c': False
         }
 
         self.listener = keyboard.Listener(on_press=self.on_press, on_release=self.on_release)

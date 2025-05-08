@@ -1,25 +1,36 @@
+import serial
+import time
+from pynput import keyboard
 
-from gpiozero import AngularServo
-from time import sleep
+PORT = '/dev/ttyACM0'
+BAUD = 115200
 
-servo = AngularServo(18, min_angle=0, max_angle=270, min_pulse_width=0.5/1000,max_pulse_width=2.5/ 1000)
-while True:
-    servo.angle = 0  # Set the servo to 0 degrees
-    sleep(1)  # Wait for 1 second
-    servo.angle = 90  # Set the servo to 90 degrees
-    sleep(1)  # Wait for 1 second
-    servo.angle = 180  # Set the servo to 180 degrees
-    sleep(1)  # Wait for 1 second
-    servo.angle = 270  # Set the servo to 270 degrees
-    sleep(1)  # Wait for 1 second    
+gripper_open = False
 
+def on_press(key):
+    global gripper_open, ser
+    
+    if key == keyboard.Key.space:
+        gripper_open = not gripper_open
+        cmd = b'G' if gripper_open else b'H'
+        try:
+            ser.write(cmd)
+            print(f"[SEND] {cmd!r} → {'OPEN' if gripper_open else 'CLOSE'}")
+        except serial.SerialException as e:
+            print("[ERROR] Failed to write:", e)
+    
+    elif key == keyboard.Key.esc:
+        print("[EXIT] ESC pressed. Closing.")
+        ser.close()
+        return False
+    
+try:
+    ser = serial.Serial(PORT, BAUD, timeout=0)
+    time.sleep(2)  # Allow Arduino to reset
+    print(f"[CONNECTED] {PORT} at {BAUD} baud. Press SPACE to toggle, ESC to quit.")
+except Exception as e:
+    print("[ERROR] Could not open port:", e)
+    exit(1)
 
-    # for angle in range(0, 271, 1):  # sweep from 0° to 270°
-    #     servo.angle = angle
-    #     sleep(0.001)
-
-    # for angle in range(270, -1, -1):  # sweep back from 270° to 0°
-    #     servo.angle = angle
-    #     sleep(0.001)
-
-
+with keyboard.Listener(on_press=on_press) as listener:
+    listener.join()
