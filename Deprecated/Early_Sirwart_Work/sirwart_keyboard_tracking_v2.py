@@ -6,8 +6,6 @@ import numpy as np
 import pynput.keyboard as keyboard
 from robot_control_utils.workspace import Workspace
 
-
-from robot_control_utils.TrajectoryPlanner import TrajectoryPlanner6dof as trajectory_planner
 from robot_control_utils.NRIK import NRIK
 
 # Mujoco configuration
