@@ -7,6 +7,7 @@ import scipy
 import scipy.linalg
 from UI_utils.keyboard_listener import Keyboard_Listener
 import serial
+import sys
 
 ########################
 # EDIT THIS PART - BEGIN
@@ -65,6 +66,13 @@ if using_gripper:
 
 with can.Bus() as bus:
     rs_client = robstride.Client(bus)
+
+    # Check for issue where zeroing leads to values in the 6 range
+    for id in motor_ids:
+        pos = rs_client.read_param(id, 'mechpos')
+        if pos > 5:
+            print("Something went wrong with zeroing, please re-zero")
+            sys.exit(0)
 
     # Set all motors to velocity mode and enable
     for id in motor_ids:

@@ -4,6 +4,7 @@ import robstride
 import time
 import numpy as np
 import serial
+import sys
 
 from UI_utils.keyboard_listener import Keyboard_Listener
 from robot_control_utils.NRIK import NRIK
@@ -65,6 +66,13 @@ if using_gripper:
 
 with can.Bus() as bus:
     rs_client = robstride.Client(bus)
+
+    # Check for issue where zeroing leads to values in the 6 range
+    for id in motor_ids:
+        pos = rs_client.read_param(id, 'mechpos')
+        if pos > 5:
+            print("Something went wrong with zeroing, please re-zero")
+            sys.exit(0)
 
     # Set and enable all motors
     for id in motor_ids:

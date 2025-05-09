@@ -131,16 +131,26 @@ print("[INFO] Trajectory is within reachable bounds. Executing...")
 with can.Bus() as bus:
     rs_client = robstride.Client(bus)
 
-    # for id in motor_ids:
-    #     rs_client.write_param(id, 'run_mode', robstride.RunMode.Position)
-    #     rs_client.enable(id)
+    # Check for issue where zeroing leads to values in the 6 range
+    for id in motor_ids:
+        pos = rs_client.read_param(id, 'mechpos')
+        if pos > 5:
+            print("Something went wrong with zeroing, please re-zero")
+            sys.exit(0)
 
+    # Set motors to position mode
+    for id in motor_ids:
+        rs_client.write_param(id, 'run_mode', robstride.RunMode.Position)
+        rs_client.enable(id)
+
+    # Record Start Time
     start_time = time.time()
 
+    # Control Loop
     while True:
         elapsed = time.time() - start_time
         step = min(int(np.floor(elapsed * command_rate)), np.shape(traj.jointSpaceTraj)[0] - 1)
 
-        # for i, id in enumerate(motor_ids):
-        #     rs_client.write_param(id, 'loc_ref', traj.pos_ref[step, i])
+        for i, id in enumerate(motor_ids):
+            rs_client.write_param(id, 'loc_ref', traj.pos_ref[step, i])
         print(traj.pos_ref[step, 0])
