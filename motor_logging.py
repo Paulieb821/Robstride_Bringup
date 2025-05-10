@@ -13,9 +13,9 @@ with can.Bus() as bus:
     for id in motors_to_log:
         rs_client.disable(id)
 
-    # First set the run mode to position
+    # Set the run mode to operaiton
     for id in motors_to_log:
-        rs_client.write_param(id, 'run_mode', robstride.RunMode.Position)
+        rs_client.write_param(id, 'run_mode', robstride.RunMode.Operation)
     
     # Then enable the motor
     for id in motors_to_log:

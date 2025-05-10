@@ -153,4 +153,3 @@ with can.Bus() as bus:
 
         for i, id in enumerate(motor_ids):
             rs_client.write_param(id, 'loc_ref', traj.pos_ref[step, i])
-        print(traj.pos_ref[step, 0])
