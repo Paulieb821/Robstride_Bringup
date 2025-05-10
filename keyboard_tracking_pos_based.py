@@ -18,7 +18,7 @@ site_name = 'endeff'
 command_rate = 20
 speed = 0.2
 max_velocity = speed / command_rate
-acceleration = 0.1 * max_velocity  # Smoothing
+acceleration = 0.2 * max_velocity  # Smoothing
 
 # Motor mapping
 motor_ids = [1, 2, 3, 4]
@@ -44,6 +44,9 @@ mj.mj_forward(model, data)
 endeff_pos = site.xpos.copy()
 joint_pos = ik.solveIK_3dof(endeff_pos)
 
+# Joint limits
+joint_limits = model.jnt_range[:model.njnt]  # (lower, upper)
+
 # Control helpers
 velocity = np.zeros(3)
 kb = Keyboard_Listener()
@@ -56,15 +59,15 @@ if using_gripper:
         ser = serial.Serial(PORT, BAUD, timeout=0)
         gripper_open = False
         time.sleep(2)
-    except serial.SerialException as e:
-        print(f"[WARNING] Could not connect to gripper: {e}")
+    except:
+        print(f"[WARNING] Could not connect to gripper")
         using_gripper = False
 
 ########################
 # MAIN CONTROL LOOP
 ########################
 
-with can.Bus() as bus:
+with can.Bus(interface='socketcan', channel='can0', bitrate=1000000) as bus:
     rs_client = robstride.Client(bus)
 
     # Check for issue where zeroing leads to values in the 6 range
@@ -127,11 +130,26 @@ with can.Bus() as bus:
         if np.linalg.norm(dist_from_center) > reachable_sphere_radius:
             print("Blocked: outside reachable zone.")
             continue
-        else:
-            endeff_pos = proposed_pos
 
         # Inverse kinematics
-        joint_pos = ik.solveIK_3dof(endeff_pos)
+        proposed_joint_pos = ik.solveIK_3dof(proposed_pos)
+
+        # Joint limit check
+        joint_limit_violation = False
+        for i in range(len(motor_ids)):
+            lower, upper = joint_limits[i]
+            if proposed_joint_pos[i] < lower or proposed_joint_pos[i] > upper:
+                joint_limit_violation = True
+                break
+
+        if joint_limit_violation:
+            print("Blocked: joint limit reached.")
+            continue
+
+        # If no violations, accept motion
+        endeff_pos = proposed_pos
+        joint_pos = proposed_joint_pos
+
         print("End Effector:", np.round(endeff_pos, 2), "Joints:", np.round(joint_pos, 2))
 
         # Send joint positions

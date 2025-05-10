@@ -21,12 +21,13 @@ with can.Bus(interface='socketcan', channel='can0', bitrate=1000000) as bus:
     for id in motors_to_log:
         rs_client.enable(id)
 
-    while True:
-        positions = []
-        for id in motors_to_log:
-            pos = rs_client.read_param(id, 'mechpos')
-            positions.append(round(pos, 2))
+    positions = []
+    for id in motors_to_log:
+        if id == 1 or id == 3 or id == 4:
+            rs_client.write_param(id, 'loc_kp', 60.0)
+        pos = rs_client.read_param(id, 'loc_kp')
+        positions.append(round(pos, 2))
 
-        # Create a dynamic print string like "J1: 12.3 J2: 45.6 ..."
-        output = ' '.join([f"J{motor_id}: {pos}" for motor_id, pos in zip(motors_to_log, positions)])
-        print(output)
+    # Create a dynamic print string like "J1: 12.3 J2: 45.6 ..."
+    output = ' '.join([f"J{motor_id}: {pos}" for motor_id, pos in zip(motors_to_log, positions)])
+    print(output)

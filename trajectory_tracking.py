@@ -1,69 +1,3 @@
-# import mujoco as mj
-# import can
-# import robstride
-# import time
-# import numpy as np
-
-# from robot_control_utils.TrajectoryPlanner import TrajectoryPlanner6dof as trajectory_planner
-
-# # Mujoco configuration
-# urdf_path = 'robot_models/Sim_Arm_4DOF_May_25/robot.xml'
-# site_name = 'endeff'
-# command_rate = 50
-
-# # Load the MuJoCo model and data
-# model = mj.MjModel.from_xml_path(urdf_path)
-# data = mj.MjData(model)
-# site = data.site(site_name)
-
-# # Create trajectory
-# traj = trajectory_planner(model, data, site, [0.0, 0.0, 0.0, 0.0], command_rate)
-# traj.addHold(3)
-# traj.addLinearMove_3dof(np.array([0, 0.4, 0.1]), 2)
-# traj.addLinearMove_3dof(np.array([0, 0.7, 0.1]), 2)
-# traj.addLinearMove_3dof(np.array([0.35, 0.5, 0.2]), 2)
-# traj.addLinearMove_3dof(np.array([-0.35, 0.5, 0.2]), 2)
-# traj.addLinearMove_3dof(np.array([0, 0.5, 0.4]), 2)
-# traj.addLinearMove_3dof(np.array([0, 0.2, 0.8]), 2)
-
-# # Adjust for gear ratio and CW vs CCW
-
-# traj.pos_ref[:,0] = traj.pos_ref[:,0] * -1
-# traj.vel_ref[:,0] = traj.vel_ref[:,0] * -1
-# traj.pos_ref[:,1] = traj.pos_ref[:,1] * -1
-# traj.vel_ref[:,1] = traj.vel_ref[:,1] * -1
-# traj.pos_ref[:,3] = traj.pos_ref[:,3] * -3
-# traj.vel_ref[:,3] = traj.vel_ref[:,3] * -3
-
-# # Run Trajectory
-# with can.Bus() as bus:
-#     # Declare client object
-#     rs_client = robstride.Client(bus)
-
-#     # Configure and Enable Motors
-#     rs_client.write_param(1, 'run_mode', robstride.RunMode.Position)
-#     rs_client.write_param(2, 'run_mode', robstride.RunMode.Position)
-#     rs_client.write_param(3, 'run_mode', robstride.RunMode.Position)
-#     rs_client.write_param(4, 'run_mode', robstride.RunMode.Position)
-
-#     # Then enable the motor
-#     rs_client.enable(1)
-#     rs_client.enable(2)
-#     rs_client.enable(3)
-#     rs_client.enable(4)
-
-#     # Send out commands
-#     start_time = time.time()
-
-#     while True:
-#             elapsed = time.time() - start_time
-#             step = min(int(np.floor(elapsed*command_rate)), np.shape(traj.jointSpaceTraj)[0]-1)
-#             print(np.round(traj.taskSpaceTraj[step][:3], 2))
-#             # rs_client.write_param(1, 'loc_ref', traj.pos_ref[step, 0])
-#             # rs_client.write_param(2, 'loc_ref', traj.pos_ref[step, 1])
-#             # rs_client.write_param(3, 'loc_ref', traj.pos_ref[step, 2])
-#             # rs_client.write_param(4, 'loc_ref', traj.pos_ref[step, 3])
-
 import mujoco as mj
 import can
 import robstride
@@ -112,9 +46,10 @@ for i, ratio in enumerate(motor_ratios):
     traj.vel_ref[:, i] *= ratio
 
 ########################
-# REACHABILITY VALIDATION
+# TRAJECTORY VALIDATION
 ########################
 
+# Reachability check
 for i, point in enumerate(traj.taskSpaceTraj):
     pos = point[:3]
     dist = np.linalg.norm(pos - reachable_sphere_center)
@@ -122,13 +57,23 @@ for i, point in enumerate(traj.taskSpaceTraj):
         print(f"[ERROR] Trajectory point {i} at {pos} is outside the reachable sphere (distance = {dist:.3f} m)")
         sys.exit(1)
 
-print("[INFO] Trajectory is within reachable bounds. Executing...")
+# Joint limit check
+joint_limits = model.jnt_range[:model.njnt]  # (lower, upper)
+for i, joint_pos in enumerate(traj.jointSpaceTraj):
+    for j in range(len(motor_ids)):
+        joint_val = joint_pos[j]
+        lower, upper = joint_limits[j]
+        if joint_val < lower or joint_val > upper:
+            print(f"[ERROR] Trajectory point {i} violates joint limit for joint {j}: {joint_val:.3f} not in [{lower:.3f}, {upper:.3f}]")
+            sys.exit(1)
+
+print("[INFO] Trajectory is within reachable bounds and joint limits. Executing...")
 
 ########################
 # EXECUTION
 ########################
 
-with can.Bus() as bus:
+with can.Bus(interface='socketcan', channel='can0', bitrate=1000000) as bus:
     rs_client = robstride.Client(bus)
 
     # Check for issue where zeroing leads to values in the 6 range

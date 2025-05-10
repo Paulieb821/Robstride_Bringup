@@ -3,7 +3,7 @@ import robstride
 import time
 import numpy as np
 
-with can.Bus() as bus:
+with can.Bus(interface='socketcan', channel='can0', bitrate=1000000) as bus:
     rs_client = robstride.Client(bus)
 
     motors_to_zero = [1, 2, 3, 4]

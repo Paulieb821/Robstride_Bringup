@@ -20,7 +20,7 @@ site_name = 'endeff'
 # Control settings
 command_rate = 10   # Hz
 max_speed = 0.2     # Speed of end effector m/s
-accel = 0.6         # Acceleration on start/stop to avoid vibration
+accel = 1.0         # Acceleration on start/stop to avoid vibration
 null_speed = 0.2    # Speed at which J1 moves through the null space rad/s
 
 # Motor Setup
@@ -32,7 +32,7 @@ reachable_sphere_center = np.array([0, 0, 0.115])
 reachable_sphere_radius = 0.9       
 
 # Hybrid hold tuning
-Kp_hold = 10.0
+Kp_hold = 15.0
 max_hold_speed = 2
 
 # Gripper
@@ -49,6 +49,9 @@ site = data.site(site_name)
 jac_pos = np.zeros((3, model.nv))
 jac_rot = np.zeros((3, model.nv))
 
+# Extract joint limits
+joint_limits = model.jnt_range[:model.njnt]  # (njnt, 2)
+
 # Initialize key tracker
 kb = Keyboard_Listener()
 
@@ -59,12 +62,12 @@ if using_gripper:
         BAUD = 115200
         ser = serial.Serial(PORT, BAUD, timeout=0)
         gripper_open = False
-        time.sleep(2)  # Give time to initialize
-    except serial.SerialException as e:
-        print(f"[WARNING] Could not connect to gripper: {e}")
+        time.sleep(2)
+    except:
+        print(f"[WARNING] Could not connect to gripper")
         using_gripper = False
 
-with can.Bus() as bus:
+with can.Bus(interface='socketcan', channel='can0', bitrate=1000000) as bus:
     rs_client = robstride.Client(bus)
 
     # Check for issue where zeroing leads to values in the 6 range
@@ -94,11 +97,9 @@ with can.Bus() as bus:
                     kb.key_states['space'] = False
                     gripper_open = not gripper_open
                     ser.write(b'G' if gripper_open else b'H')
-
                 elif kb.key_states['o']:
                     kb.key_states['o'] = False
                     ser.write(b'o')
-
                 elif kb.key_states['c']:
                     kb.key_states['c'] = False
                     ser.write(b'c')
@@ -133,7 +134,6 @@ with can.Bus() as bus:
                 error = hold_targets[id] - mech_positions[id]
                 hold_speed = np.clip(Kp_hold * error, -max_hold_speed, max_hold_speed)
                 rs_client.write_param(id, 'spd_ref', hold_speed)
-
         else:
             hold_targets = {}
 
@@ -142,6 +142,21 @@ with can.Bus() as bus:
                 null_vec = scipy.linalg.null_space(jac_pos)[:, 0]
                 null_vec /= null_vec[0]
                 joint_vels = null_speed * null_vec if kb.key_states['1'] else -null_speed * null_vec
+
+                temp_joint_angles = np.array([mech_positions[id] / motor_ratios[i] for i, id in enumerate(motor_ids)])
+                next_qpos = temp_joint_angles + joint_vels / command_rate
+
+                limit_violation = False
+                for i in range(len(motor_ids)):
+                    lower, upper = joint_limits[i]
+                    if next_qpos[i] < lower or next_qpos[i] > upper:
+                        limit_violation = True
+                        break
+
+                if limit_violation:
+                    joint_vels = np.zeros(len(motor_ids))
+                    speed = 0
+                    print("Blocked: joint limit reached (null space motion).")
 
             else:
                 norm_dir = direction / np.linalg.norm(direction)
@@ -161,10 +176,27 @@ with can.Bus() as bus:
                 else:
                     mj.mj_jacSite(model, data, jac_pos, jac_rot, site.id)
                     joint_vels = (np.linalg.pinv(jac_pos) @ speed_vec).flatten()
-                    if outside:
+
+                    # Joint limit check
+                    next_qpos = temp_joint_angles + joint_vels / command_rate
+                    limit_violation = False
+                    for i in range(len(motor_ids)):
+                        lower, upper = joint_limits[i]
+                        if next_qpos[i] < lower or next_qpos[i] > upper:
+                            limit_violation = True
+                            break
+
+                    if limit_violation:
+                        joint_vels = np.zeros(len(motor_ids))
+                        speed = 0
+                        print("Blocked: joint limit reached.")
+
+                    elif outside:
                         print("Returning inward from boundary")
 
             for i, id in enumerate(motor_ids):
                 rs_client.write_param(id, 'spd_ref', joint_vels[i] * motor_ratios[i])
 
         time.sleep(1 / command_rate)
+
+#wwwwwwwwwwwwwwssssssssssssss
