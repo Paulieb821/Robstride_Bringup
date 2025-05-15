@@ -1,3 +1,8 @@
+"""
+use this command when on ssh : 
+sudo /home/lidar/anaconda3/envs/kscale/bin/python /home/lidar/Robstride_Bringup/keyboard_tracking_pos_based_SSH.py
+
+"""
 import mujoco as mj
 import can
 import robstride
@@ -5,8 +10,7 @@ import time
 import numpy as np
 import serial
 import sys
-
-from UI_utils.keyboard_listener import Keyboard_Listener
+import keyboard 
 from servocontrol import GripperController 
 from robot_control_utils.NRIK import NRIK
 
@@ -14,12 +18,39 @@ from robot_control_utils.NRIK import NRIK
 # CONFIGURATION SECTION
 ########################
 
+
 urdf_path = 'robot_models/Sim_Arm_4DOF_May_25/robot.xml'
 site_name = 'endeff'
 command_rate = 20
 speed = 0.2
 max_velocity = speed / command_rate
 acceleration = 0.2 * max_velocity  # Smoothing
+
+########################
+# KEYBOARD LISTENING 
+########################
+
+class Keyboard_Listener:
+    def __init__(self):
+        pass  # no setup needed
+
+    @property
+    def key_states(self):
+        return {
+            'w': keyboard.is_pressed('w'),
+            'a': keyboard.is_pressed('a'),
+            's': keyboard.is_pressed('s'),
+            'd': keyboard.is_pressed('d'),
+            'up': keyboard.is_pressed('up'),
+            'down': keyboard.is_pressed('down'),
+            'space': keyboard.is_pressed('space'),
+            'o': keyboard.is_pressed('o'),
+            'c': keyboard.is_pressed('c'),
+            '1': keyboard.is_pressed('1'),
+            '2': keyboard.is_pressed('2'),
+            't': keyboard.is_pressed('t')
+        }
+
 
 # Motor mapping
 motor_ids = [1, 2, 3, 4]

@@ -1,3 +1,8 @@
+"""
+use this command when on ssh : 
+sudo /home/lidar/anaconda3/envs/kscale/bin/python /home/lidar/Robstride_Bringup/keyboard_tracking_pos_based_SSH.py
+"""
+
 import mujoco as mj
 import can
 import robstride
@@ -5,9 +10,36 @@ import time
 import numpy as np
 import scipy
 import scipy.linalg
-from UI_utils.keyboard_listener import Keyboard_Listener
+# from UI_utils.keyboard_listener import Keyboard_Listener
+import keyboard 
 import serial
 import sys
+from servocontrol import GripperController 
+
+########################
+# KEYBOARD LISTENING 
+########################
+
+class Keyboard_Listener:
+    def __init__(self):
+        pass  # no setup needed
+
+    @property
+    def key_states(self):
+        return {
+            'w': keyboard.is_pressed('w'),
+            'a': keyboard.is_pressed('a'),
+            's': keyboard.is_pressed('s'),
+            'd': keyboard.is_pressed('d'),
+            'up': keyboard.is_pressed('up'),
+            'down': keyboard.is_pressed('down'),
+            'space': keyboard.is_pressed('space'),
+            'o': keyboard.is_pressed('o'),
+            'c': keyboard.is_pressed('c'),
+            '1': keyboard.is_pressed('1'),
+            '2': keyboard.is_pressed('2'),
+        }
+
 
 ########################
 # EDIT THIS PART - BEGIN
@@ -56,16 +88,21 @@ joint_limits = model.jnt_range[:model.njnt]  # (njnt, 2)
 kb = Keyboard_Listener()
 
 # Initialize gripper if needed
+# Gripper setup
 if using_gripper:
     try:
-        PORT = '/dev/ttyACM0'
-        BAUD = 115200
-        ser = serial.Serial(PORT, BAUD, timeout=0)
-        gripper_open = False
-        time.sleep(2)
-    except:
-        print(f"[WARNING] Could not connect to gripper")
+        gripper = GripperController(
+            port="/dev/ttyUSB0",
+            baud=9600,
+            servo_ids=(8, 11),     # DOUBLE CHECK WHAT IS ON HARDWARE
+            pulse_open = 500,    # swap these if direction is reversed
+            pulse_closed = 2500
+        )
+
+    except Exception as e:
+        print(f"[WARNING] Gripper init failed: {e}")
         using_gripper = False
+
 
 with can.Bus(interface='socketcan', channel='can0', bitrate=1000000) as bus:
     rs_client = robstride.Client(bus)
@@ -91,21 +128,16 @@ with can.Bus(interface='socketcan', channel='can0', bitrate=1000000) as bus:
 
     while True:
         # Gripper logic
-        if using_gripper:
-            try:
-                if kb.key_states['space']:
-                    kb.key_states['space'] = False
-                    gripper_open = not gripper_open
-                    ser.write(b'G' if gripper_open else b'H')
-                elif kb.key_states['o']:
-                    kb.key_states['o'] = False
-                    ser.write(b'o')
-                elif kb.key_states['c']:
-                    kb.key_states['c'] = False
-                    ser.write(b'c')
-            except serial.SerialException as e:
-                print(f"[ERROR] Gripper communication failed: {e}")
-                using_gripper = False
+        if using_gripper:        
+            if kb.key_states['o']:
+                kb.key_states['o'] = False
+                gripper.open_step()
+            elif kb.key_states['c']:
+                kb.key_states['c'] = False
+                gripper.close_step()
+            elif kb.key_states['space']:
+                kb.key_states['space'] = False
+                gripper.toggle()
 
         # Read mechpos
         mech_positions = {id: rs_client.read_param(id, 'mechpos') for id in motor_ids}
