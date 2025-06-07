@@ -28,7 +28,6 @@ with can.Bus(interface='socketcan', channel='can0', bitrate=1000000) as bus:
 
     motors_to_log = [1, 2, 3, 4]
     
-
     # Disable to prevent any holding
     for id in motors_to_log:
         rs_client.disable(id)
