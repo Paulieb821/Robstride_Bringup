@@ -109,6 +109,7 @@ class TrajectoryLogger:
             ax2.set_ylabel('Velocity (rad/s)')
             ax2.legend()
             ax2.grid(True)
+            ax2.set_ylim(-1, 1)
             
             # Torque plot
             ax3.plot(time, self.data['torque'][motor_id], label='Torque')

@@ -20,9 +20,9 @@ motor_ids = [1, 2, 3, 4]  # You can modify this list to test different combinati
 motor_ratios = [1, 1, -1, -3]
 
 # Controller gains
-kp = 60.0  # Position gain
-kd_rs01 = 1.0    # Velocity gain
-kd_rs02 = 1.0
+kp = 100  # Position gain
+kd_rs01 = 2.0  # Velocity gain
+kd_rs02 = 2.0
 
 # Reachability sphere
 reachable_sphere_center = np.array([0, 0, 0.115])
