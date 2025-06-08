@@ -4,8 +4,8 @@ import robstride
 import time
 import numpy as np
 import sys
-
 from robot_control_utils.TrajectoryPlanner import TrajectoryPlanner6dof as trajectory_planner
+from robot_control_utils.trajectory_logger import TrajectoryLogger
 
 ########################
 # CONFIGURATION SECTION
@@ -16,8 +16,13 @@ site_name = 'endeff'
 command_rate = 50
 
 # Motor IDs and Ratios
-motor_ids = [1, 2, 3, 4]
+motor_ids = [1, 2, 3, 4]  # You can modify this list to test different combinations
 motor_ratios = [1, 1, -1, -3]
+
+# Controller gains
+kp = 60.0  # Position gain
+kd_rs01 = 1.0    # Velocity gain
+kd_rs02 = 1.0
 
 # Reachability sphere
 reachable_sphere_center = np.array([0, 0, 0.115])
@@ -75,6 +80,9 @@ print("[INFO] Trajectory is within reachable bounds and joint limits. Executing.
 
 with can.Bus(interface='socketcan', channel='can0', bitrate=1000000) as bus:
     rs_client = robstride.Client(bus)
+    
+    # Initialize logger
+    logger = TrajectoryLogger(motor_ids, kp, kd_rs01, kd_rs02)
 
     # Check for issue where zeroing leads to values in the 6 range
     for id in motor_ids:
@@ -99,30 +107,48 @@ with can.Bus(interface='socketcan', channel='can0', bitrate=1000000) as bus:
         step = min(int(np.floor(elapsed * command_rate)), np.shape(traj.jointSpaceTraj)[0] - 1)
 
         # Check if it's time to send a new command
-        if current_time - last_command_time >= 1.0/command_rate:
-            for i, id in enumerate(motor_ids):
-                # Use control method instead of write_param
-                feedback = rs_client.control(
-                    motor_id=id,
-                    torque=0.0,  # You could add feedforward torque if needed
-                    mech_position=traj.pos_ref[step, i],
-                    speed=traj.vel_ref[step, i],
-                    kp=60.0,
-                    kd=3
-                )
-                
-                # Check for errors
-                if feedback.errors:
-                    print(f"Motor {id} reported errors: {feedback.errors}")
-                    # Handle errors appropriately
-                
-                # Optional: Check tracking performance
-                pos_error = abs(feedback.angle - traj.pos_ref[step, i])
-                if pos_error > 0.1:  # 0.1 rad threshold
-                    print(f"Motor {id} position error: {pos_error:.3f} rad")
+        feedback_data = {}
+        ref_data = {}
+        
+        for i, id in enumerate(motor_ids):
+            # Use control method instead of write_param
+            kd_val = kd_rs02 if id == 2 else kd_rs01
+
+            feedback = rs_client.control(
+                motor_id=id,
+                torque=0.0,  # You could add feedforward torque if needed
+                mech_position=traj.pos_ref[step, i],
+                speed=traj.vel_ref[step, i],
+                kp=kp,
+                kd=kd_val
+            )
             
-            last_command_time = current_time
+            # Store feedback data
+            feedback_data[id] = {
+                'angle': feedback.angle,
+                'velocity': feedback.velocity,
+                'torque': feedback.torque,
+                'errors': feedback.errors
+            }
+            
+            # Store reference data
+            ref_data[id] = {
+                'position': traj.pos_ref[step, i],
+                'velocity': traj.vel_ref[step, i]
+            }
+            
+            # Check for errors
+            if feedback.errors:
+                print(f"Motor {id} reported errors: {feedback.errors}")
+        
+        # Log data
+        logger.log_data(elapsed, feedback_data, ref_data)
+        last_command_time = current_time
 
         # Check if trajectory is complete
         if step >= np.shape(traj.jointSpaceTraj)[0] - 1:
             break
+
+    # Finalize logging
+    logger.finalize()
+    print(f"[INFO] Trajectory execution complete. Logs saved in {logger.run_dir}")
