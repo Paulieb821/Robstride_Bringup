@@ -126,7 +126,7 @@ if using_gripper:
 # MAIN CONTROL LOOP
 ########################
 
-# ──────────────────── CAN ­HELPER (NEW) ────────────────────
+# ──────────────────── CAN ­HELPER ────────────────────
 def send_hold(client):
     """Keep drives alive with last valid joint_pos."""
     for i, mid in enumerate(motor_ids):
@@ -163,10 +163,6 @@ with can.Bus(interface='socketcan', channel='can0', bitrate=1_000_000) as bus:
             gripper.toggle()
 
         # # --- TRANSLATIONAL INPUT ---
-        # print("This is the game pad state x : ", gamepad_state['x'])
-        # print("This is the game pad state y : ", gamepad_state['y'])
-         # print("This is the game pad state x normalized : ", x_norm)
-        # print("This is the game pad state y normalized : ", y_norm)
 
         x_norm = (gamepad_state['x'] - x_center) / x_halfrange
         y_norm = (gamepad_state['y'] - y_center) / y_halfrange
@@ -200,7 +196,7 @@ with can.Bus(interface='socketcan', channel='can0', bitrate=1_000_000) as bus:
         proposed_pos = endeff_pos + velocity
         if np.linalg.norm(proposed_pos - reachable_sphere_center) > reachable_sphere_radius:
             print("Blocked: outside reachable zone.")
-            time.sleep(1/command_rate)
+            send_hold(rs_client)
             continue
 
         proposed_joints = ik.solveIK_3dof(proposed_pos)
@@ -208,7 +204,7 @@ with can.Bus(interface='socketcan', channel='can0', bitrate=1_000_000) as bus:
                (proposed_joints[i] > joint_limits[i][1])
                for i in range(len(motor_ids))):
             print("Blocked: joint limit reached.")
-            time.sleep(1/command_rate)
+            send_hold(rs_client)
             continue
 
         # accept and send

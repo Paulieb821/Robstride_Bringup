@@ -1,3 +1,4 @@
+# REPLACE DEFAULT SIRWART CLIENT.PY WITH THIS ONE
 import dataclasses
 import enum
 import math
@@ -70,7 +71,6 @@ params = [
 ]
 
 param_ids_by_name = dict(params)
-
 def float_to_uint(x, x_min, x_max, bits):
     span = x_max - x_min
     x = max(min(x, x_max), x_min)
@@ -79,70 +79,106 @@ def float_to_uint(x, x_min, x_max, bits):
 class Client:
     def __init__(self, bus: can.BusABC, retry_count=2, recv_timeout=2, host_can_id=0xAA):
         self.bus = bus
-        self.retry_count = retry_count
+        self.retry_count=retry_count
         self.recv_timeout = recv_timeout
         self.host_can_id = host_can_id
         self._recv_count = 0
         self._recv_error_count = 0
 
+   
+
     def enable(self, motor_id: int, motor_model=1) -> FeedbackResp:
-        self.bus.send(self._rs_msg(MotorMsg.Enable, self.host_can_id, motor_id, [0]*8))
+        self.bus.send(self._rs_msg(MotorMsg.Enable, self.host_can_id, motor_id, [0, 0, 0, 0, 0, 0, 0, 0]))
         resp = self._recv()
         return self._parse_feedback_resp(resp, motor_id, motor_model)
 
     def disable(self, motor_id: int, motor_model=1) -> FeedbackResp:
-        self.bus.send(self._rs_msg(MotorMsg.Disable, self.host_can_id, motor_id, [0]*8))
+        self.bus.send(self._rs_msg(MotorMsg.Disable, self.host_can_id, motor_id, [0, 0, 0, 0, 0, 0, 0, 0]))
         resp = self._recv()
         return self._parse_feedback_resp(resp, motor_id, motor_model)
 
     def update_id(self, motor_id: int, new_motor_id: int):
         id_data_1 = self.host_can_id | (new_motor_id << 8)
-        self.bus.send(self._rs_msg(MotorMsg.SetID, id_data_1, motor_id, [0]*8))
+        self.bus.send(self._rs_msg(MotorMsg.SetID, id_data_1, motor_id, [0, 0, 0, 0, 0, 0, 0, 0]))
         self._recv()
 
     def read_param(self, motor_id: int, param_id: int | str) -> float | RunMode:
         param_id = self._normalize_param_id(param_id)
-        data = [param_id & 0xFF, param_id >> 8] + [0]*6
+
+        data = [param_id & 0xFF, param_id >> 8, 0, 0, 0, 0, 0, 0]
         self.bus.send(self._rs_msg(MotorMsg.ReadParam, self.host_can_id, motor_id, data))
         resp = self._recv()
+        
         self._parse_and_validate_resp_arbitration_id(resp, MotorMsg.ReadParam.value, motor_id)
+
         resp_param_id = struct.unpack('<H', resp.data[:2])[0]
         if resp_param_id != param_id:
             raise Exception('Invalid param id')
+
         if param_id == 0x7005:
             value = RunMode(int(resp.data[4]))
         elif param_id == 0x7029:
             value = int(resp.data[4])
         else:
             value = struct.unpack('<f', resp.data[4:])[0]
+        
         return value
 
     def write_param(self, motor_id: int, param_id: int | str, param_value: float | RunMode | int, motor_model=1) -> FeedbackResp:
         param_id = self._normalize_param_id(param_id)
+
         data = bytes([param_id & 0xFF, param_id >> 8, 0, 0])
         if param_id == 0x7005:
-            int_value = int(param_value.value if isinstance(param_value, RunMode) else param_value)
+            if isinstance(param_value, RunMode):
+                int_value = int(param_value.value)
+            elif isinstance(param_value, int):
+                int_value = param_value
             data += bytes([int_value, 0, 0, 0])
         elif param_id == 0x7029:
-            int_value = int(param_value)
+            if isinstance(param_value, int):
+                int_value = param_value
             data += bytes([int_value, 0, 0, 0])
         else:
             data += struct.pack('<f', param_value)
+
         self.bus.send(self._rs_msg(MotorMsg.WriteParam, self.host_can_id, motor_id, data))
         resp = self._recv()
+
         return self._parse_feedback_resp(resp, motor_id, motor_model)
 
+    def error_rate(self) -> float:
+        return self._recv_error_count / self._recv_count
+    
     def save_flash(self, motor_id: int, baud_code: int = 0x01):
-        data = bytes([baud_code] + [0]*7)
-        self.bus.send(self._rs_msg(MotorMsg.SaveFlash, self.host_can_id, motor_id, data))
-        self._recv()
+        """
+        Send the type‑22 frame so every parameter written with type‑18
+        (e.g. zero_sta) is stored in flash.  baud_code selects the CAN
+        baud‑rate to be used *after the next power‑cycle*.
+            0x01 → 1 Mbit, 0x02 → 500 k, 0x03 → 250 k, 0x04 → 100 k
+        """
+        data = bytes([baud_code, 0, 0, 0, 0, 0, 0, 0])
+        self.bus.send(self._rs_msg(MotorMsg.SaveFlash,
+                                    self.host_can_id, motor_id, data))
+        self._recv()        # waits for the ACK (Feedback frame)
+
+    
 
     def zero_pos(self, motor_id: int, motor_model: int = 1) -> FeedbackResp:
-        data = bytes([1] + [0]*7)
-        self.bus.send(self._rs_msg(MotorMsg.ZeroPos, self.host_can_id, motor_id, data))
-        resp = self._recv()
+        """
+        1.  Physically move the joint to the angle you want to become 0 rad.
+        2.  Call zero_pos().  The driver stores the current encoder count
+            as its new mechanical zero.
+        3.  (optional) call save_flash() so the offset survives power‑loss.
+        """
+        data = bytes([1, 0, 0, 0, 0, 0, 0, 0])      # Byte0 = 1, rest = 0
+        self.bus.send(self._rs_msg(MotorMsg.ZeroPos,
+                                   self.host_can_id,   # bit15‑8
+                                   motor_id,           # bit7‑0
+                                   data))
+        resp = self._recv()                          # Feedback (=ACK)
         return self._parse_feedback_resp(resp, motor_id, motor_model)
-
+    
+    
     def control(self, motor_id: int, torque: float, mech_position: float, speed: float, kp: float, kd: float) -> FeedbackResp:
         T_MIN, T_MAX = -18.0, 18.0
         P_MIN, P_MAX = -4 * math.pi, 4 * math.pi
@@ -166,9 +202,7 @@ class Client:
         self.bus.send(self._rs_msg(MotorMsg.Control, torque_uint, motor_id, data))
         resp = self._recv()
         return self._parse_feedback_resp(resp, motor_id, motor_model=1)
-
-    def error_rate(self) -> float:
-        return self._recv_error_count / self._recv_count
+    
 
     def _rs_msg(self, msg_type, id_data_1, id_data_2, data):
         arb_id = id_data_2 + (id_data_1 << 8) + (msg_type.value << 24)
@@ -183,10 +217,13 @@ class Client:
                 raise Exception('No response from motor received')
             if not resp.is_error_frame:
                 return resp
+            
             retry_count += 1
             self._recv_error_count += 1
+            # TODO: make logging configurable
             print('received error:', resp)
-        raise Exception('Error reading response:', resp)
+        
+        raise Exception('Error reading resp:', resp)
 
     def _parse_resp_abitration_id(self, aid):
         msg_type = (aid & 0x1F000000) >> 24
@@ -202,13 +239,20 @@ class Client:
             raise Exception('Invalid host CAN ID', resp)
         if msg_motor_id != expected_motor_id:
             raise Exception('Invalid motor ID received', resp)
+
         return msg_type, msg_motor_id, host_id
 
     def _parse_feedback_resp(self, resp, motor_id, motor_model):
         self._parse_and_validate_resp_arbitration_id(resp, MotorMsg.Feedback.value, motor_id)
+ 
         aid = resp.arbitration_id
         error_bits = (aid & 0x1F0000) >> 16
-        errors = [MotorError(1 << i) for i in range(6) if (1 << i) & error_bits]
+        errors = []
+        for i in range(6):
+            value = 1 << i
+            if value & error_bits:
+                errors.append(MotorError(value))
+
         mode = MotorMode((aid & 0x400000) >> 22)
 
         angle_raw = struct.unpack('>H', resp.data[0:2])[0]
@@ -216,11 +260,11 @@ class Client:
 
         velocity_raw = struct.unpack('>H', resp.data[2:4])[0]
         velocity_range = 88 if motor_model == 1 else 30
-        velocity = (float(velocity_raw) / 65535 * velocity_range) - velocity_range / 2
+        velocity = (float(velocity_raw) / 65535 * velocity_range) - velocity_range/2
 
         torque_raw = struct.unpack('>H', resp.data[4:6])[0]
         torque_range = 34 if motor_model == 1 else 240
-        torque = (float(torque_raw) / 65535 * torque_range) - torque_range / 2
+        torque = (float(torque_raw) / 65535 * torque_range) - torque_range/2
 
         temp_raw = struct.unpack('>H', resp.data[6:8])[0]
         temp = float(temp_raw) / 10
@@ -230,4 +274,5 @@ class Client:
     def _normalize_param_id(self, param_id: int | str) -> int:
         if isinstance(param_id, str):
             return param_ids_by_name[param_id]
+        
         return param_id
