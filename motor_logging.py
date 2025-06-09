@@ -30,20 +30,24 @@ with can.Bus(interface='socketcan', channel='can0', bitrate=1000000) as bus:
     
     # Disable to prevent any holding
     for id in motors_to_log:
-        rs_client.disable(id)
+        motor_model = 1 if id != 2 else 2
+        rs_client.disable(id, motor_model=motor_model)
 
     # Set the run mode to operaiton
     for id in motors_to_log:
-        rs_client.write_param(id, 'run_mode', robstride.RunMode.Operation)
+        motor_model = 1 if id != 2 else 2
+        rs_client.write_param(id, 'run_mode', robstride.RunMode.Operation, motor_model=motor_model)
     
     # Then enable the motor
     for id in motors_to_log:
-        rs_client.enable(id)
+        motor_model = 1 if id != 2 else 2
+        rs_client.enable(id, motor_model=motor_model)
 
     while True:
         positions = []
         for id in motors_to_log:
-            pos = rs_client.read_param(id, 'mechpos')
+            motor_model = 1 if id != 2 else 2   
+            pos = rs_client.read_param(id, 'mechpos', motor_model=motor_model)
             positions.append(round(pos, 2))
 
         # Create a dynamic print string like "J1: 12.3 J2: 45.6 ..."

@@ -11,6 +11,7 @@ with can.Bus(interface='socketcan', channel='can0', bitrate=1000000) as bus:
     # Disable to prevent any holding
     for id in motors_to_zero:
         rs_client.disable(id)
-        rs_client.write_param(id, 'run_mode', robstride.RunMode.Operation)
+        motor_model = 1 if id != 2 else 2
+        rs_client.write_param(id, 'run_mode', robstride.RunMode.Operation, motor_model=motor_model)
         rs_client.zero_pos(id)
     

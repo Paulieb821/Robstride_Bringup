@@ -20,9 +20,8 @@ motor_ids = [1, 2, 3, 4]  # You can modify this list to test different combinati
 motor_ratios = [1, 1, -1, -3]
 
 # Controller gains
-kp = 100  # Position gain
-kd_rs01 = 2.0  # Velocity gain
-kd_rs02 = 2.0
+kp_arr = [50.0, 100.0, 50.0, 50.0]
+kd_arr = [1.0, 2.0, 1.0, 1.0]
 
 # Reachability sphere
 reachable_sphere_center = np.array([0, 0, 0.115])
@@ -80,21 +79,22 @@ print("[INFO] Trajectory is within reachable bounds and joint limits. Executing.
 
 with can.Bus(interface='socketcan', channel='can0', bitrate=1000000) as bus:
     rs_client = robstride.Client(bus)
-    
     # Initialize logger
-    logger = TrajectoryLogger(motor_ids, kp, kd_rs01, kd_rs02)
+    logger = TrajectoryLogger(motor_ids, kp=kp_arr[0],kp2=kp_arr[1], kd=kd_arr[0], kd2=kd_arr[1])
 
     # Check for issue where zeroing leads to values in the 6 range
     for id in motor_ids:
-        pos = rs_client.read_param(id, 'mechpos')
+        motor_model = 1 if id != 2 else 2
+        pos = rs_client.read_param(id, 'mechpos', motor_model)
         if pos > 1:
             print("Something went wrong with zeroing, please re-zero")
             sys.exit(0)
 
     # Set motors to operation mode
     for id in motor_ids:
-        rs_client.write_param(id, 'run_mode', robstride.RunMode.Operation)
-        rs_client.enable(id)
+        motor_model = 1 if id != 2 else 2
+        rs_client.write_param(id, 'run_mode', robstride.RunMode.Operation, motor_model=motor_model)
+        rs_client.enable(id, motor_model=motor_model)
 
     # Record Start Time
     start_time = time.time()
@@ -112,15 +112,15 @@ with can.Bus(interface='socketcan', channel='can0', bitrate=1000000) as bus:
         
         for i, id in enumerate(motor_ids):
             # Use control method instead of write_param
-            kd_val = kd_rs02 if id == 2 else kd_rs01
-
+            motor_model = 1 if id != 2 else 2
             feedback = rs_client.control(
                 motor_id=id,
                 torque=0.0,  # You could add feedforward torque if needed
                 mech_position=traj.pos_ref[step, i],
                 speed=traj.vel_ref[step, i],
-                kp=kp,
-                kd=kd_val
+                kp=kp_arr[motor_ids - 1],
+                kd=kd_arr[motor_ids - 1],
+                motor_model=motor_model
             )
             
             # Store feedback data

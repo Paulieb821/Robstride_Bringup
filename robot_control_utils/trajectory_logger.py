@@ -7,16 +7,17 @@ from typing import List, Dict, Optional
 import pandas as pd
 
 class TrajectoryLogger:
-    def __init__(self, motor_ids: List[int], kp: float, kd: float, kd2: float, save_dir: str = "trajectory_logs"):
+    def __init__(self, motor_ids: List[int], kp: float, kp2:float,  kd: float, kd2: float, save_dir: str = "trajectory_logs"):
         self.motor_ids = motor_ids
         self.kp = kp
         self.kd = kd
+        self.kp2 = kp2
         self.kd2 = kd2
         self.save_dir = save_dir
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
         # Create save directory if it doesn't exist
-        self.run_dir = os.path.join(save_dir, f"kp{kp}_kd{kd}_{self.timestamp}")
+        self.run_dir = os.path.join(save_dir, f"KpOne-{kp}_kdOne-{kd}_KpTwo-{kp2}_KdTwo-{kd2}_{self.timestamp}")
         os.makedirs(self.run_dir, exist_ok=True)
         
         # Initialize data storage
@@ -95,7 +96,7 @@ class TrajectoryLogger:
             ax1.plot(time, self.data['position'][motor_id], label='Actual')
             ax1.plot(time, self.data['position_ref'][motor_id], label='Reference', linestyle='--')
             if motor_id == 2:
-                ax1.set_title(f'Motor {motor_id} Position (Kp={self.kp}, Kd={self.kd2})')
+                ax1.set_title(f'Motor {motor_id} Position (Kp={self.kp2}, Kd={self.kd2})')
             else:
                 ax1.set_title(f'Motor {motor_id} Position (Kp={self.kp}, Kd={self.kd})')
             ax1.set_ylabel('Position (rad)')
