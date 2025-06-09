@@ -20,8 +20,8 @@ motor_ids = [1, 2, 3, 4]  # You can modify this list to test different combinati
 motor_ratios = [1, 1, -1, -3]
 
 # Controller gains
-kp_arr = [50.0, 100.0, 50.0, 50.0]
-kd_arr = [1.0, 2.0, 1.0, 1.0]
+kp_arr = [70.0, 700.0, 70.0, 70.0]
+kd_arr = [1.0, 1.0, 1.0, 1.0]
 
 # Reachability sphere
 reachable_sphere_center = np.array([0, 0, 0.115])
@@ -37,12 +37,13 @@ site = data.site(site_name)
 
 traj = trajectory_planner(model, data, site, [0.0, 0.0, 0.0, 0.0], command_rate)
 traj.addHold(3)
-traj.addLinearMove_3dof(np.array([0, 0.4, 0.1]), 2)
-traj.addLinearMove_3dof(np.array([0, 0.7, 0.1]), 2)
-traj.addLinearMove_3dof(np.array([0.35, 0.5, 0.2]), 2)
-traj.addLinearMove_3dof(np.array([-0.35, 0.5, 0.2]), 2)
-traj.addLinearMove_3dof(np.array([0, 0.5, 0.4]), 2)
-traj.addLinearMove_3dof(np.array([0, 0.2, 0.8]), 2)
+duration = 1
+traj.addLinearMove_3dof(np.array([0, 0.4, 0.1]), duration)
+traj.addLinearMove_3dof(np.array([0, 0.7, 0.1]), duration)
+traj.addLinearMove_3dof(np.array([0.35, 0.5, 0.2]), duration)
+traj.addLinearMove_3dof(np.array([-0.35, 0.5, 0.2]), duration)
+traj.addLinearMove_3dof(np.array([0, 0.5, 0.4]), duration)
+traj.addLinearMove_3dof(np.array([0, 0.2, 0.8]), duration)
 
 # Apply motor ratios
 for i, ratio in enumerate(motor_ratios):
@@ -85,7 +86,7 @@ with can.Bus(interface='socketcan', channel='can0', bitrate=1000000) as bus:
     # Check for issue where zeroing leads to values in the 6 range
     for id in motor_ids:
         motor_model = 1 if id != 2 else 2
-        pos = rs_client.read_param(id, 'mechpos', motor_model)
+        pos = rs_client.read_param(id, 'mechpos')
         if pos > 1:
             print("Something went wrong with zeroing, please re-zero")
             sys.exit(0)
@@ -118,8 +119,8 @@ with can.Bus(interface='socketcan', channel='can0', bitrate=1000000) as bus:
                 torque=0.0,  # You could add feedforward torque if needed
                 mech_position=traj.pos_ref[step, i],
                 speed=traj.vel_ref[step, i],
-                kp=kp_arr[motor_ids - 1],
-                kd=kd_arr[motor_ids - 1],
+                kp=kp_arr[i],
+                kd=kd_arr[i],
                 motor_model=motor_model
             )
             

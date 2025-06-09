@@ -46,8 +46,8 @@ with can.Bus(interface='socketcan', channel='can0', bitrate=1000000) as bus:
     while True:
         positions = []
         for id in motors_to_log:
-            motor_model = 1 if id != 2 else 2   
-            pos = rs_client.read_param(id, 'mechpos', motor_model=motor_model)
+              
+            pos = rs_client.read_param(id, 'mechpos')
             positions.append(round(pos, 2))
 
         # Create a dynamic print string like "J1: 12.3 J2: 45.6 ..."
