@@ -136,17 +136,12 @@ def send_hold(client):
 with can.Bus(interface='socketcan', channel='can0', bitrate=1_000_000) as bus:
     rs_client = robstride.Client(bus)
 
-    # sanity-check zeroing
+    # zero-check, enable motors 
     for mid in motor_ids:
         if rs_client.read_param(mid, 'mechpos') > 2:
-            print("Zeroing error: re-zero hardware.")
-            sys.exit(1)
-
-    # enable motors
-    for mid in motor_ids:
+            print("Zeroing error: re-zero hardware."); sys.exit(1)
         rs_client.write_param(mid, 'run_mode', robstride.RunMode.Position)
         rs_client.enable(mid)
-
     while True:
         # --- GRIPPER BUTTONS ---
     
