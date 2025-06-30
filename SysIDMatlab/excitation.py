@@ -9,7 +9,7 @@ with can.Bus() as bus:
 
     # Parameters
     motorID = 1
-    motorKT = 1.22  # Torque constant of motor Nm/Arms (1.22 for RS01 and RS02, )
+    motorKT = 1.22  # Torque constant of motor Nm/Arms (1.22 for RS01 and RS02, 2.36 for RS03)
     testTime = 10   # Seconds
     timestep = 0.05 # Seconds
     amp = 0.5       # Torque amplitude in Nm
