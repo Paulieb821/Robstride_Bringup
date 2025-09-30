@@ -73,6 +73,7 @@ def main():
     print("  q — quit\n")
 
     while True:
+        
         if gamepad_state['open'] == 1:
             gamepad_state['open'] = 0
             gripper.open_step()

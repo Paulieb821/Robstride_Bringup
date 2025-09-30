@@ -65,7 +65,7 @@ class TrajectoryPlanner6dof:
     # Execute a Linear Point to Point Motion
     def addLinearMove_6dof(self, endPos, endRot, duration):
         # Number of Points in Trajectory
-        numPoints = duration*self.pps+1
+        numPoints = int(np.floor(duration*self.pps))+1
         
         # Convert Euler Angles to Quaterions to IK Solver
         startQuat = self.taskSpaceTraj[-1,:]
@@ -104,8 +104,8 @@ class TrajectoryPlanner6dof:
             mj.mj_forward(self.model, self.data)
 
         # Add Motion to Master Trajectory
-        self.taskSpaceTraj = np.concatenate((self.taskSpaceTraj, localTaskSpaceTraj[1:,:]))
-        self.jointSpaceTraj = np.concatenate((self.jointSpaceTraj, localJointSpaceTraj[1:,:]))
+        self.taskSpaceTraj = np.vstack((self.taskSpaceTraj, localTaskSpaceTraj[1:,:]))
+        self.jointSpaceTraj = np.vstack((self.jointSpaceTraj, localJointSpaceTraj[1:,:]))
         self.totalTime = self.totalTime + duration
         tempTimeArr = np.add(self.timeArr[-1], np.linspace(0, duration, numPoints))
         self.timeArr = np.concatenate((self.timeArr, tempTimeArr[1:]))
@@ -115,7 +115,7 @@ class TrajectoryPlanner6dof:
     # Execute a Linear Point to Point Motion
     def addLinearMove_3dof(self, endPos, duration):
         # Number of Points in Trajectory
-        numPoints = duration*self.pps+1
+        numPoints = int(np.floor(duration*self.pps))+1
         
         # Trajectory Start
         startPos = self.taskSpaceTraj[-1,:3]
@@ -148,6 +148,97 @@ class TrajectoryPlanner6dof:
             mj.mj_forward(self.model, self.data)
 
         # Add Motion to Master Trajectory
+        self.taskSpaceTraj = np.vstack((self.taskSpaceTraj, localTaskSpaceTraj[1:,:]))
+        self.jointSpaceTraj = np.vstack((self.jointSpaceTraj, localJointSpaceTraj[1:,:]))
+        self.totalTime = self.totalTime + duration
+        tempTimeArr = np.add(self.timeArr[-1], np.linspace(0, duration, numPoints))
+        self.timeArr = np.concatenate((self.timeArr, tempTimeArr[1:]))
+
+        self.generateReferences()
+
+    # Execute a Linear Point to Point Motion
+    def addLinearMove_3dof_fixed_joint(self, endPos, duration, joint_id=3):
+        # Number of Points in Trajectory
+        numPoints = int(np.floor(duration*self.pps))+1
+        
+        # Trajectory Start
+        startPos = self.taskSpaceTraj[-1,:3]
+
+        # Generate Quintic Task Space Trajectory
+        localTaskSpaceTraj = np.zeros((numPoints, 7))
+        for coord in range(3):
+            # Calculate Coefficients
+            c3 = 10*(endPos[coord] - startPos[coord])/math.pow(duration,3)
+            c4 = -15*(endPos[coord] - startPos[coord])/math.pow(duration,4)
+            c5 = 6*(endPos[coord] - startPos[coord])/math.pow(duration,5)
+            # Load Position into Array
+            for i in range(numPoints):
+                t = i/self.pps
+                localTaskSpaceTraj[i,coord] = startPos[coord] + c3*math.pow(t,3) + c4*math.pow(t,4) + c5*math.pow(t,5)
+
+        # Generate Joint Trajectory
+        localJointSpaceTraj = np.zeros((numPoints, self.numJoints))
+
+        # Do Inverse Kinematics
+        for i in range(numPoints):
+            # Separate Out Position
+            pos = localTaskSpaceTraj[i, 0:3]
+            # Calculate Inverse Position Kinematics and Load Into Array
+            qpos = self.ik.solveIK_3dof_fixed_joint(pos, joint_id)
+            for joint in range(self.numJoints):
+                localJointSpaceTraj[i, joint] = qpos[joint]
+            # Update Starting Point for Good Convergence
+            self.data.qpos = qpos
+            mj.mj_forward(self.model, self.data)
+
+        # Add Motion to Master Trajectory
+        self.taskSpaceTraj = np.vstack((self.taskSpaceTraj, localTaskSpaceTraj[1:,:]))
+        self.jointSpaceTraj = np.vstack((self.jointSpaceTraj, localJointSpaceTraj[1:,:]))
+        self.totalTime = self.totalTime + duration
+        tempTimeArr = np.add(self.timeArr[-1], np.linspace(0, duration, numPoints))
+        self.timeArr = np.concatenate((self.timeArr, tempTimeArr[1:]))
+
+        self.generateReferences()
+
+    def trace_circle(self, radius, duration):
+        # Number of Points in Trajectory
+        numPoints = int(np.floor(duration*self.pps))+1
+        
+        # Trajectory Start
+        startPos = self.taskSpaceTraj[-1,:3]
+        startOrient = self.taskSpaceTraj[-1, 3:]
+
+        # Generate Quintic Task Space Trajectory
+        localTaskSpaceTraj = np.zeros((numPoints, 7))
+
+        offset = np.array([0, 0, radius])
+        center = startPos.copy() + offset
+        theta = np.linspace(-np.pi / 2, 1.5*np.pi, numPoints)
+
+        for i, angle in enumerate(theta):
+            # Define the circle in the XZ plane; y remains constant.
+            localTaskSpaceTraj[i, 0] = center[0] + radius * np.cos(angle)  # x 
+            localTaskSpaceTraj[i, 1] = center[1]
+            localTaskSpaceTraj[i, 2] = center[2] + radius * np.sin(angle)  # z
+                
+            # Keep the orientation constant (same as starting orientation)
+            # localTaskSpaceTraj[i, 3:] = startOrient  # uncomment for 6 dof
+        # Generate Joint Trajectory
+        localJointSpaceTraj = np.zeros((numPoints, self.numJoints))
+
+        # Do Inverse Kinematics
+        for i in range(numPoints):
+            # Separate Out Position
+            pos = localTaskSpaceTraj[i, :3]
+            # Calculate Inverse Position Kinematics and Load Into Array
+            qpos = self.ik.solveIK_3dof(pos)
+            for joint in range(self.numJoints):
+                localJointSpaceTraj[i, joint] = qpos[joint]
+            # Update Starting Point for Good Convergence
+            self.data.qpos = qpos
+            mj.mj_forward(self.model, self.data)
+
+        # Add Motion to Master Trajectory
         self.taskSpaceTraj = np.concatenate((self.taskSpaceTraj, localTaskSpaceTraj[1:,:]))
         self.jointSpaceTraj = np.concatenate((self.jointSpaceTraj, localJointSpaceTraj[1:,:]))
         self.totalTime = self.totalTime + duration
@@ -156,27 +247,33 @@ class TrajectoryPlanner6dof:
 
         self.generateReferences()
 
+
     # Hold a Position for a Set Amount of Time
     def addHold(self, duration):
         # Number of Points in Trajectory
-        numPoints = duration*self.pps+1
+        numPoints = int(np.floor(duration*self.pps))+1
 
         # Load Task Space Trajectories
         localTaskSpaceTraj = np.zeros((numPoints, 7))
-        for i in range(numPoints):
-            for coord in range(7):
-                localTaskSpaceTraj[i, coord] = self.taskSpaceTraj[-1, coord]
+        # for i in range(numPoints):
+        #     for coord in range(7):
+        #         localTaskSpaceTraj[i, coord] = self.taskSpaceTraj[-1, coord]
+        localTaskSpaceTraj[:, :7] = self.taskSpaceTraj[-1, :7]
+
 
         # Generate Joint Trajectories
         localJointSpaceTraj = np.zeros((numPoints, self.numJoints))
         # Load Joint Positions
-        for i in range(numPoints):
-            for joint in range(self.numJoints):
-                localJointSpaceTraj[i, joint] = self.jointSpaceTraj[-1, joint]
+        # for i in range(numPoints):
+        #     for joint in range(self.numJoints):
+        #         localJointSpaceTraj[i, joint] = self.jointSpaceTraj[-1, joint]
+        localJointSpaceTraj[:] = self.jointSpaceTraj[-1, :]
+
+        
 
         # Add Motion to Master Trajectory
-        self.taskSpaceTraj = np.concatenate((self.taskSpaceTraj, localTaskSpaceTraj[1:,:]))
-        self.jointSpaceTraj = np.concatenate((self.jointSpaceTraj, localJointSpaceTraj[1:,:]))
+        self.taskSpaceTraj = np.vstack((self.taskSpaceTraj, localTaskSpaceTraj[1:,:]))
+        self.jointSpaceTraj = np.vstack((self.jointSpaceTraj, localJointSpaceTraj[1:,:]))
         self.totalTime = self.totalTime + duration
         tempTimeArr = np.add(self.timeArr[-1], np.linspace(0, duration, numPoints))
         self.timeArr = np.concatenate((self.timeArr, tempTimeArr[1:]))
@@ -196,10 +293,13 @@ class TrajectoryPlanner6dof:
         b = 2*pow(self.pps,2)
         T = 1/self.pps
         # Solve for velocity and force references
-        for j in range(self.numJoints):
-            for i in range(numPoints-1):
-                acc_ref[i,j] = a*vel_ref[i,j] + b*(pos_ref[i+1,j] - pos_ref[i,j])
-                vel_ref[i+1,j] = vel_ref[i,j] + T*acc_ref[i,j]
+        # for j in range(self.numJoints):
+        #     for i in range(numPoints-1):
+        #         acc_ref[i,j] = a*vel_ref[i,j] + b*(pos_ref[i+1,j] - pos_ref[i,j])
+        #         vel_ref[i+1,j] = vel_ref[i,j] + T*acc_ref[i,j]
+        delta_pos = pos_ref[1:] - pos_ref[:-1]  # Shape: (numPoints - 1, numJoints)
+        acc_ref[:-1] = a * vel_ref[:-1] + b * delta_pos
+        vel_ref[1:] = vel_ref[:-1] + T * acc_ref[:-1]
         # Add to Trajectory 
         self.pos_ref = pos_ref
         self.vel_ref = vel_ref

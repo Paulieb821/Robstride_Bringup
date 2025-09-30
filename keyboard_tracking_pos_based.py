@@ -30,8 +30,7 @@ reachable_sphere_center = np.array([0, 0, 0.115])
 reachable_sphere_radius = 0.9
 
 # Gripper control
-using_gripper = True
-
+using_gripper = False
 ########################
 # INITIALIZATION
 ########################

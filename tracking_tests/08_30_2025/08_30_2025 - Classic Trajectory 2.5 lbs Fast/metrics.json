@@ -1,0 +1,43 @@
+{
+    "kp": 70.0,
+    "kd": 1.0,
+    "timestamp": "20250830_144934",
+    "metrics": {
+        "1": {
+            "max_overshoot": 0.07027405874989075,
+            "rise_time": 5.935896396636963,
+            "settling_time": 8.963637113571167,
+            "steady_state_error": 6.330393229655926e-05,
+            "max_velocity_error": 1.6767767327428986,
+            "rms_position_error": 0.014240487926478649,
+            "rms_velocity_error": 0.2949935133518264
+        },
+        "2": {
+            "max_overshoot": 0.05800635264746401,
+            "rise_time": 1.430511474609375e-06,
+            "settling_time": 9.463258981704712,
+            "steady_state_error": 0.010143737540886148,
+            "max_velocity_error": 1.4843640624128094,
+            "rms_position_error": 0.01599438122767793,
+            "rms_velocity_error": 0.33874449527638756
+        },
+        "3": {
+            "max_overshoot": 0.13713770296999092,
+            "rise_time": 5.918848991394043,
+            "settling_time": 10.114903926849365,
+            "steady_state_error": 0.0016492817178529403,
+            "max_velocity_error": 2.324022689877468,
+            "rms_position_error": 0.02135043354479804,
+            "rms_velocity_error": 0.32216658290108796
+        },
+        "4": {
+            "max_overshoot": 0.1466216719627207,
+            "rise_time": 1.430511474609375e-06,
+            "settling_time": 10.82603931427002,
+            "steady_state_error": 0.023843285046431132,
+            "max_velocity_error": 5.66642510817282,
+            "rms_position_error": 0.03389543221332516,
+            "rms_velocity_error": 1.3579593102013807
+        }
+    }
+}

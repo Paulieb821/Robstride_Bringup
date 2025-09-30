@@ -87,6 +87,50 @@ class NRIK:
             return self.data.qpos
         else:
             return self.data.qpos
+        
+    def solveIK_3dof_fixed_joint(self, endPos, fixed_joint_id):
+        posErrLim = 0.001
+        limit = 100
+        q = self.data.qpos.copy()
+        i = 0
+        posErr = 100
+
+        fixed_joint_idx = fixed_joint_id - 1
+
+        dof = len(q)
+        while posErr > posErrLim and i <= limit:
+            relPos = endPos - self.site.xpos
+
+            # Compute Jacobian
+            mj.mj_jacSite(self.model, self.data, self.jacp, self.jacr, self.site.id)
+            full_jac = self.jacp[:, :dof]  # (3 x dof)
+
+            # Remove fixed joint from Jacobian
+            mask = np.ones(dof, dtype=bool)
+            mask[fixed_joint_idx] = False
+            reduced_jac = full_jac[:, mask]  # (3 x dof-1)
+
+            # Solve least squares for non-fixed joints
+            dq_reduced = np.linalg.pinv(reduced_jac) @ relPos  # (dof-1)
+
+            # Reconstruct full dq with zero for fixed joint
+            dq_full = np.zeros(dof)
+            dq_full[mask] = dq_reduced
+            dq_full[fixed_joint_idx] = 0.0  # explicitly zero for clarity
+
+            # Update joint angles
+            q += dq_full
+            self.data.qpos[:] = q
+            mj.mj_forward(self.model, self.data)
+
+            # Check error
+            posErr = np.linalg.norm(endPos - self.site.xpos)
+            i += 1
+
+        if i > limit:
+            print("Failed to Converge")
+        return self.data.qpos
+
             
     def getBodyJacobian(self):
         # Get Space Jacobian

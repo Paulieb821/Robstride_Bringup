@@ -59,7 +59,7 @@ try:
         rs_client = robstride.Client(bus)
         time.sleep(0.5)
 
-        motors_to_log = [1, 2, 3, 4]
+        motors_to_log = [1,2,3,4]
         
         print("Disabling motors to release any holding torque...")
         for id in motors_to_log:
@@ -79,12 +79,14 @@ try:
         print("\n--- Reading Motor Positions ---")
         while True:
             positions = []
+            st_time = time.time()
             for id in motors_to_log:
                 pos = rs_client.read_param(id, 'mechpos')
+                vel = rs_client.read_param(id, 'mechvel')
                 positions.append(round(pos, 2))
-
+            elapsed_time = time.time() - st_time
             output = ' '.join([f"J{motor_id}: {pos}" for motor_id, pos in zip(motors_to_log, positions)])
-            print(f"\r{output}", end="") # Use carriage return to print on the same line
+            print(f"\r{output} | Loop time: {elapsed_time:.3f}", end="") # Use carriage return to print on the same line
             time.sleep(0.1)
 
 except can.CanError as e:

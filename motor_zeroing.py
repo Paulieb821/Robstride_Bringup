@@ -6,7 +6,8 @@ import numpy as np
 with can.Bus(interface='socketcan', channel='can0', bitrate=1000000) as bus:
     rs_client = robstride.Client(bus)
 
-    motors_to_zero = [1, 2, 3, 4]
+    motors_to_zero = [1,2,3,4]
+    
 
     # Disable to prevent any holding
     for id in motors_to_zero:
