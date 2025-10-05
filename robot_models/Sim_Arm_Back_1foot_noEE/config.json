@@ -1,0 +1,13 @@
+{
+    "url": "https://cad.onshape.com/documents/89c2000dd1a2e6c0b43141b5/w/011f2e3700106f95fa6aa43d/e/5009e815f87295c93e811ed1",
+    "output_format": "mujoco",
+    "documentId": "89c2000dd1a2e6c0b43141b5",
+    "configuration": "Configuration=1:1 Pulley Ratio",
+    
+    "joint_properties": {
+        "default": {
+            "actuated": true,
+            "type": "motor"
+        }
+    }
+}

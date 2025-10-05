@@ -1,0 +1,245 @@
+<?xml version="1.0" ?>
+<!-- Generated using onshape-to-robot -->
+<!-- Onshape https://cad.onshape.com/documents/89c2000dd1a2e6c0b43141b5/w/011f2e3700106f95fa6aa43d/e/5009e815f87295c93e811ed1 -->
+<mujoco model="Sim_Arm_Back_1foot_noEE">
+  <compiler angle="radian" meshdir="assets" autolimits="true"/>
+  <default>
+    <default class="Sim_Arm_Back_1foot_noEE">
+      <joint frictionloss="0.1" armature="0.005"/>
+      <default class="visual">
+        <geom type="mesh" contype="0" conaffinity="0" group="2"/>
+      </default>
+      <default class="collision">
+        <geom group="3"/>
+      </default>
+    </default>
+  </default>
+
+  <contact>
+    <exclude name="fix01" body1="root" body2="body_1"/>
+    <exclude name="fix02" body1="root" body2="body_2"/>
+    <exclude name="fix03" body1="root" body2="body_3"/>
+    <exclude name="fix04" body1="root" body2="body_4"/>
+    <exclude name="fix05" body1="body_1" body2="body_2"/>
+    <exclude name="fix06" body1="body_1" body2="body_3"/>
+    <exclude name="fix07" body1="body_1" body2="body_4"/>
+    <exclude name="fix08" body1="body_2" body2="body_3"/>
+    <exclude name="fix09" body1="body_2" body2="body_4"/>
+    <exclude name="fix10" body1="body_3" body2="body_4"/>
+  </contact>
+
+  <worldbody>
+    <!-- Link rs02_sim -->
+    <body name="root" pos="0 0 0" euler="0 -1.5707 0" childclass="Sim_Arm_Back_1foot_noEE">
+      <inertial pos="0.00273516 0.00586429 -3.05119e-05" mass="0.78135" fullinertia="0.0012204 0.00180127 0.00122952 4.33803e-05 -9.1121e-08 6.09206e-07"/>
+      <!-- Part rs02_sim -->
+      <geom type="mesh" class="visual" pos="-1.99005e-18 0 0" quat="0.5 -0.5 -0.5 -0.5" mesh="rs02_sim" material="rs02_sim_material"/>
+      <geom type="mesh" class="collision" pos="-1.99005e-18 0 0" quat="0.5 -0.5 -0.5 -0.5" mesh="rs02_sim" material="rs02_sim_material"/>
+      <!-- Part back_mount -->
+      <geom type="mesh" class="visual" pos="-0.107 -0.106591 6.7795e-10" quat="0.5 -0.5 0.5 -0.5" mesh="back_mount" material="back_mount_material"/>
+      <geom type="mesh" class="collision" pos="-0.107 -0.106591 6.7795e-10" quat="0.5 -0.5 0.5 -0.5" mesh="back_mount" material="back_mount_material"/>
+      <!-- Link main_shoulder_bracket -->
+      <body name="body_1" pos="4.46996e-18 0.0455 2.78607e-18" quat="0.5 -0.5 0.5 0.5">
+        <!-- Joint from rs02_sim to main_shoulder_bracket -->
+        <joint axis="0 0 1" name="J1" type="hinge" range="-2.7925268031909245 2.79252680319093"/>
+        <inertial pos="-0.07314 3.24407e-06 0.0533673" mass="0.942642" fullinertia="0.00187029 0.00268297 0.00229221 -6.73335e-09 0.000554167 -1.09614e-07"/>
+        <!-- Part rs02_sim_2 -->
+        <geom type="mesh" class="visual" pos="-0.11575 4.39342e-18 0.07635" quat="1.96262e-17 0.707107 0 0.707107" mesh="rs02_sim" material="rs02_sim_material"/>
+        <geom type="mesh" class="collision" pos="-0.11575 4.39342e-18 0.07635" quat="1.96262e-17 0.707107 0 0.707107" mesh="rs02_sim" material="rs02_sim_material"/>
+        <!-- Part part_8 -->
+        <geom type="mesh" class="visual" pos="-4.13165e-18 -1.67858e-18 0.01" quat="1 0 -1.94289e-16 2.77556e-17" mesh="part_8" material="part_8_material"/>
+        <geom type="mesh" class="collision" pos="-4.13165e-18 -1.67858e-18 0.01" quat="1 0 -1.94289e-16 2.77556e-17" mesh="part_8" material="part_8_material"/>
+        <!-- Part main_shoulder_bracket -->
+        <geom type="mesh" class="visual" pos="-1.2326e-32 0 0.01" quat="1 0 0 0" mesh="main_shoulder_bracket" material="main_shoulder_bracket_material"/>
+        <geom type="mesh" class="collision" pos="-1.2326e-32 0 0.01" quat="1 0 0 0" mesh="main_shoulder_bracket" material="main_shoulder_bracket_material"/>
+        <!-- Link bridge_bracket_to_j3 -->
+        <body name="body_2" pos="-0.07025 -1.69204e-17 0.07635" quat="0.707107 -1.63853e-14 -0.707107 1.6355e-14">
+          <!-- Joint from main_shoulder_bracket to bridge_bracket_to_j3 -->
+          <joint axis="0 0 1" name="J2" type="hinge" range="0.0 3.141592653589793"/>
+          <inertial pos="-4.35821e-06 0.00271833 -0.0626789" mass="0.642696" fullinertia="0.000674891 0.000810203 0.000402643 3.42809e-07 2.36765e-07 1.33867e-05"/>
+          <!-- Part bridge_bracket_to_j3 -->
+          <geom type="mesh" class="visual" pos="1.38778e-17 0.06635 -0.07025" quat="0.5 0.5 0.5 -0.5" mesh="bridge_bracket_to_j3" material="bridge_bracket_to_j3_material"/>
+          <geom type="mesh" class="collision" pos="1.38778e-17 0.06635 -0.07025" quat="0.5 0.5 0.5 -0.5" mesh="bridge_bracket_to_j3" material="bridge_bracket_to_j3_material"/>
+          <!-- Part rs02_bridge_bracket_spacer -->
+          <geom type="mesh" class="visual" pos="1.38778e-17 0.06635 -0.07025" quat="0.5 0.5 0.5 -0.5" mesh="rs02_bridge_bracket_spacer" material="rs02_bridge_bracket_spacer_material"/>
+          <geom type="mesh" class="collision" pos="1.38778e-17 0.06635 -0.07025" quat="0.5 0.5 0.5 -0.5" mesh="rs02_bridge_bracket_spacer" material="rs02_bridge_bracket_spacer_material"/>
+          <!-- Part rs02_sim_3 -->
+          <geom type="mesh" class="visual" pos="1.38778e-17 0.0275 -0.07025" quat="0.5 0.5 0.5 -0.5" mesh="rs02_sim" material="rs02_sim_material"/>
+          <geom type="mesh" class="collision" pos="1.38778e-17 0.0275 -0.07025" quat="0.5 0.5 0.5 -0.5" mesh="rs02_sim" material="rs02_sim_material"/>
+          <!-- Part j3_to_shoulder_support -->
+          <geom type="mesh" class="visual" pos="1.38778e-17 0.06635 -0.07025" quat="0.5 0.5 0.5 -0.5" mesh="j3_to_shoulder_support" material="j3_to_shoulder_support_material"/>
+          <geom type="mesh" class="collision" pos="1.38778e-17 0.06635 -0.07025" quat="0.5 0.5 0.5 -0.5" mesh="j3_to_shoulder_support" material="j3_to_shoulder_support_material"/>
+          <!-- Link anti_deflection_support__configuration_back_arm -->
+          <body name="body_3" pos="1.38778e-17 -0.018 -0.07025" quat="0.5 -0.5 0.5 0.5">
+            <!-- Joint from bridge_bracket_to_j3 to anti_deflection_support__configuration_back_arm -->
+            <joint axis="0 0 1" name="J3" type="hinge" range="-1.570796326794861 1.570796326794932"/>
+            <inertial pos="0.00804629 -2.58319e-05 -0.152189" mass="1.51657" fullinertia="0.0217664 0.0213499 0.00154645 9.1738e-07 0.0011366 -2.91548e-06"/>
+            <!-- Part idler_pulley_mirror__configuration_back_arm -->
+            <geom type="mesh" class="visual" pos="0.01625 -0.0186781 -0.04655" quat="0.5 0.5 -0.5 0.5" mesh="idler_pulley_mirror__configuration_back_arm" material="idler_pulley_mirror__configuration_back_arm_material"/>
+            <geom type="mesh" class="collision" pos="0.01625 -0.0186781 -0.04655" quat="0.5 0.5 -0.5 0.5" mesh="idler_pulley_mirror__configuration_back_arm" material="idler_pulley_mirror__configuration_back_arm_material"/>
+            <!-- Part main_plate__configuration_back_arm -->
+            <geom type="mesh" class="visual" pos="0.01625 -5.41234e-16 -0.06425" quat="0.5 0.5 -0.5 0.5" mesh="main_plate__configuration_back_arm" material="main_plate__configuration_back_arm_material"/>
+            <geom type="mesh" class="collision" pos="0.01625 -5.41234e-16 -0.06425" quat="0.5 0.5 -0.5 0.5" mesh="main_plate__configuration_back_arm" material="main_plate__configuration_back_arm_material"/>
+            <!-- Part trans_side_shell_output_side__configuration_back_arm -->
+            <geom type="mesh" class="visual" pos="0.01625 -7.49401e-16 -0.06425" quat="0.5 0.5 -0.5 0.5" mesh="trans_side_shell_output_side__configuration_back_arm" material="trans_side_shell_output_side__configuration_back_arm_material"/>
+            <geom type="mesh" class="collision" pos="0.01625 -7.49401e-16 -0.06425" quat="0.5 0.5 -0.5 0.5" mesh="trans_side_shell_output_side__configuration_back_arm" material="trans_side_shell_output_side__configuration_back_arm_material"/>
+            <!-- Part shaft_v2__configuration_back_arm -->
+            <geom type="mesh" class="visual" pos="0.01675 -5.41234e-16 -0.06425" quat="0.5 0.5 -0.5 0.5" mesh="shaft_v2__configuration_back_arm" material="shaft_v2__configuration_back_arm_material"/>
+            <geom type="mesh" class="collision" pos="0.01675 -5.41234e-16 -0.06425" quat="0.5 0.5 -0.5 0.5" mesh="shaft_v2__configuration_back_arm" material="shaft_v2__configuration_back_arm_material"/>
+            <!-- Part input_pulley__1_1 -->
+            <geom type="mesh" class="visual" pos="0.0373625 -1.20737e-15 -0.06425" quat="0.5 0.5 0.5 0.5" mesh="input_pulley__1_1" material="input_pulley__1_1_material"/>
+            <geom type="mesh" class="collision" pos="0.0373625 -1.20737e-15 -0.06425" quat="0.5 0.5 0.5 0.5" mesh="input_pulley__1_1" material="input_pulley__1_1_material"/>
+            <!-- Part trans_side_shell_motor_side__configuration_back_arm -->
+            <geom type="mesh" class="visual" pos="0.01625 -2.63678e-16 -0.06425" quat="0.5 0.5 -0.5 0.5" mesh="trans_side_shell_motor_side__configuration_back_arm" material="trans_side_shell_motor_side__configuration_back_arm_material"/>
+            <geom type="mesh" class="collision" pos="0.01625 -2.63678e-16 -0.06425" quat="0.5 0.5 -0.5 0.5" mesh="trans_side_shell_motor_side__configuration_back_arm" material="trans_side_shell_motor_side__configuration_back_arm_material"/>
+            <!-- Part 1_1_pulley_spacer -->
+            <geom type="mesh" class="visual" pos="0.0373625 -1.23512e-15 -0.06425" quat="0.5 0.5 0.5 0.5" mesh="1_1_pulley_spacer" material="1_1_pulley_spacer_material"/>
+            <geom type="mesh" class="collision" pos="0.0373625 -1.23512e-15 -0.06425" quat="0.5 0.5 0.5 0.5" mesh="1_1_pulley_spacer" material="1_1_pulley_spacer_material"/>
+            <!-- Part rs02_sim_4 -->
+            <geom type="mesh" class="visual" pos="-0.02525 8.60423e-16 -0.06425" quat="1.22805e-14 0.707107 -1.09912e-14 0.707107" mesh="rs02_sim" material="rs02_sim_material"/>
+            <geom type="mesh" class="collision" pos="-0.02525 8.60423e-16 -0.06425" quat="1.22805e-14 0.707107 -1.09912e-14 0.707107" mesh="rs02_sim" material="rs02_sim_material"/>
+            <!-- Part anti_deflection_support__configuration_back_arm -->
+            <geom type="mesh" class="visual" pos="0.01625 -4.57967e-16 -0.06425" quat="0.5 0.5 -0.5 0.5" mesh="anti_deflection_support__configuration_back_arm" material="anti_deflection_support__configuration_back_arm_material"/>
+            <geom type="mesh" class="collision" pos="0.01625 -4.57967e-16 -0.06425" quat="0.5 0.5 -0.5 0.5" mesh="anti_deflection_support__configuration_back_arm" material="anti_deflection_support__configuration_back_arm_material"/>
+            <!-- Part idler_spacer_mirror__configuration_back_arm -->
+            <geom type="mesh" class="visual" pos="0.01625 -0.0186781 -0.04655" quat="0.5 0.5 -0.5 0.5" mesh="idler_spacer_mirror__configuration_back_arm" material="idler_spacer_mirror__configuration_back_arm_material"/>
+            <geom type="mesh" class="collision" pos="0.01625 -0.0186781 -0.04655" quat="0.5 0.5 -0.5 0.5" mesh="idler_spacer_mirror__configuration_back_arm" material="idler_spacer_mirror__configuration_back_arm_material"/>
+            <!-- Part part_4__configuration_back_arm -->
+            <geom type="mesh" class="visual" pos="0.01625 -5.55112e-16 -0.06425" quat="0.5 0.5 -0.5 0.5" mesh="part_4__configuration_back_arm" material="part_4__configuration_back_arm_material"/>
+            <geom type="mesh" class="collision" pos="0.01625 -5.55112e-16 -0.06425" quat="0.5 0.5 -0.5 0.5" mesh="part_4__configuration_back_arm" material="part_4__configuration_back_arm_material"/>
+            <!-- Part motor_side_shell_output_side__configuration_back_arm -->
+            <geom type="mesh" class="visual" pos="0.01625 -2.63678e-16 -0.06425" quat="0.5 0.5 -0.5 0.5" mesh="motor_side_shell_output_side__configuration_back_arm" material="motor_side_shell_output_side__configuration_back_arm_material"/>
+            <geom type="mesh" class="collision" pos="0.01625 -2.63678e-16 -0.06425" quat="0.5 0.5 -0.5 0.5" mesh="motor_side_shell_output_side__configuration_back_arm" material="motor_side_shell_output_side__configuration_back_arm_material"/>
+            <!-- Part motor_side_shell_motor_side__configuration_back_arm -->
+            <geom type="mesh" class="visual" pos="0.01625 -3.33067e-16 -0.06425" quat="0.5 0.5 -0.5 0.5" mesh="motor_side_shell_motor_side__configuration_back_arm" material="motor_side_shell_motor_side__configuration_back_arm_material"/>
+            <geom type="mesh" class="collision" pos="0.01625 -3.33067e-16 -0.06425" quat="0.5 0.5 -0.5 0.5" mesh="motor_side_shell_motor_side__configuration_back_arm" material="motor_side_shell_motor_side__configuration_back_arm_material"/>
+            <!-- Part idler_spacer__configuration_back_arm -->
+            <geom type="mesh" class="visual" pos="0.01625 0.0186781 -0.04655" quat="0.5 0.5 -0.5 0.5" mesh="idler_spacer__configuration_back_arm" material="idler_spacer__configuration_back_arm_material"/>
+            <geom type="mesh" class="collision" pos="0.01625 0.0186781 -0.04655" quat="0.5 0.5 -0.5 0.5" mesh="idler_spacer__configuration_back_arm" material="idler_spacer__configuration_back_arm_material"/>
+            <!-- Part output_pulley__configuration_back_arm -->
+            <geom type="mesh" class="visual" pos="0.01675 -0.000180916 -0.06425" quat="0.5 0.5 -0.5 0.5" mesh="output_pulley__configuration_back_arm" material="output_pulley__configuration_back_arm_material"/>
+            <geom type="mesh" class="collision" pos="0.01675 -0.000180916 -0.06425" quat="0.5 0.5 -0.5 0.5" mesh="output_pulley__configuration_back_arm" material="output_pulley__configuration_back_arm_material"/>
+            <!-- Part part_3__configuration_back_arm -->
+            <geom type="mesh" class="visual" pos="0.01625 -5.27356e-16 -0.06425" quat="0.5 0.5 -0.5 0.5" mesh="part_3__configuration_back_arm" material="part_3__configuration_back_arm_material"/>
+            <geom type="mesh" class="collision" pos="0.01625 -5.27356e-16 -0.06425" quat="0.5 0.5 -0.5 0.5" mesh="part_3__configuration_back_arm" material="part_3__configuration_back_arm_material"/>
+            <!-- Part belt_cap__configuration_back_arm -->
+            <geom type="mesh" class="visual" pos="0.015125 1.26288e-15 0.21325" quat="0.5 0.5 -0.5 0.5" mesh="belt_cap__configuration_back_arm" material="belt_cap__configuration_back_arm_material"/>
+            <geom type="mesh" class="collision" pos="0.015125 1.26288e-15 0.21325" quat="0.5 0.5 -0.5 0.5" mesh="belt_cap__configuration_back_arm" material="belt_cap__configuration_back_arm_material"/>
+            <!-- Part secondary_plate__configuration_back_arm -->
+            <geom type="mesh" class="visual" pos="0.01625 -5.13478e-16 -0.06425" quat="0.5 0.5 -0.5 0.5" mesh="secondary_plate__configuration_back_arm" material="secondary_plate__configuration_back_arm_material"/>
+            <geom type="mesh" class="collision" pos="0.01625 -5.13478e-16 -0.06425" quat="0.5 0.5 -0.5 0.5" mesh="secondary_plate__configuration_back_arm" material="secondary_plate__configuration_back_arm_material"/>
+            <!-- Part idler_pulley__configuration_back_arm -->
+            <geom type="mesh" class="visual" pos="0.01625 0.0186781 -0.04655" quat="0.5 0.5 -0.5 0.5" mesh="idler_pulley__configuration_back_arm" material="idler_pulley__configuration_back_arm_material"/>
+            <geom type="mesh" class="collision" pos="0.01625 0.0186781 -0.04655" quat="0.5 0.5 -0.5 0.5" mesh="idler_pulley__configuration_back_arm" material="idler_pulley__configuration_back_arm_material"/>
+            <!-- Link ball_end_effector__configuration_back_arm -->
+            <body name="body_4" pos="0.0496 -0.000180916 -0.34175" quat="0.67438 -0.212631 -0.67438 0.212631">
+              <!-- Joint from anti_deflection_support__configuration_back_arm to ball_end_effector__configuration_back_arm -->
+              <joint axis="0 0 1" name="J4" type="hinge" range="-2.1816615649928828 0.9599310885969106"/>
+              <inertial pos="-0.15376 -0.138354 0.046813" mass="0.7924" fullinertia="0.0105098 0.00597529 0.0160675 -0.0074101 5.89416e-05 5.35628e-05"/>
+              <!-- Part wrist_bracket_1__configuration_back_arm -->
+              <geom type="mesh" class="visual" pos="0.2775 -5.55112e-17 0.03305" quat="0.707107 0.707107 8.65974e-15 -1.70356e-15" mesh="wrist_bracket_1__configuration_back_arm" material="wrist_bracket_1__configuration_back_arm_material"/>
+              <geom type="mesh" class="collision" pos="0.2775 -5.55112e-17 0.03305" quat="0.707107 0.707107 8.65974e-15 -1.70356e-15" mesh="wrist_bracket_1__configuration_back_arm" material="wrist_bracket_1__configuration_back_arm_material"/>
+              <!-- Part tube_end_effector_adapter__configuration_back_arm -->
+              <geom type="mesh" class="visual" pos="0.2775 -4.16334e-17 0.0333" quat="0.707107 0.707107 8.65974e-15 -1.7594e-15" mesh="tube_end_effector_adapter__configuration_back_arm" material="tube_end_effector_adapter__configuration_back_arm_material"/>
+              <geom type="mesh" class="collision" pos="0.2775 -4.16334e-17 0.0333" quat="0.707107 0.707107 8.65974e-15 -1.7594e-15" mesh="tube_end_effector_adapter__configuration_back_arm" material="tube_end_effector_adapter__configuration_back_arm_material"/>
+              <!-- Part ball_end_effector__configuration_back_arm -->
+              <!-- <geom type="mesh" class="visual" pos="0.2775 6.245e-16 0.0333" quat="0.707107 0.707107 8.65974e-15 -1.66187e-15" mesh="ball_end_effector__configuration_back_arm" material="ball_end_effector__configuration_back_arm_material"/>
+              <geom type="mesh" class="collision" pos="0.2775 6.245e-16 0.0333" quat="0.707107 0.707107 8.65974e-15 -1.66187e-15" mesh="ball_end_effector__configuration_back_arm" material="ball_end_effector__configuration_back_arm_material"/> -->
+              <site group="0" name="endeff" pos="-0.279 -0.312 0.047" euler="0 0 0 "/>
+              <!-- Part trapezoidal_spacer_complidant_side__configuration_back_arm -->
+              <geom type="mesh" class="visual" pos="0.2775 2.77556e-17 0.033175" quat="0.707107 0.707107 8.65974e-15 -1.70356e-15" mesh="trapezoidal_spacer_complidant_side__configuration_back_arm" material="trapezoidal_spacer_complidant_side__configuration_back_arm_material"/>
+              <geom type="mesh" class="collision" pos="0.2775 2.77556e-17 0.033175" quat="0.707107 0.707107 8.65974e-15 -1.70356e-15" mesh="trapezoidal_spacer_complidant_side__configuration_back_arm" material="trapezoidal_spacer_complidant_side__configuration_back_arm_material"/>
+              <!-- Part wrist_v2__configuration_back_arm -->
+              <geom type="mesh" class="visual" pos="0.2775 -1.38778e-16 0.033175" quat="0.707107 0.707107 8.65974e-15 -1.76258e-15" mesh="wrist_v2__configuration_back_arm" material="wrist_v2__configuration_back_arm_material"/>
+              <geom type="mesh" class="collision" pos="0.2775 -1.38778e-16 0.033175" quat="0.707107 0.707107 8.65974e-15 -1.76258e-15" mesh="wrist_v2__configuration_back_arm" material="wrist_v2__configuration_back_arm_material"/>
+              <!-- Part wrist_bracket_2__configuration_back_arm -->
+              <geom type="mesh" class="visual" pos="0.2775 -1.52656e-16 0.0333" quat="0.707107 0.707107 8.65974e-15 -1.78013e-15" mesh="wrist_bracket_2__configuration_back_arm" material="wrist_bracket_2__configuration_back_arm_material"/>
+              <geom type="mesh" class="collision" pos="0.2775 -1.52656e-16 0.0333" quat="0.707107 0.707107 8.65974e-15 -1.78013e-15" mesh="wrist_bracket_2__configuration_back_arm" material="wrist_bracket_2__configuration_back_arm_material"/>
+              <!-- Part tube_end_effector__configuration_back_arm -->
+              <geom type="mesh" class="visual" pos="0.2775 5.55112e-17 0.0333" quat="0.707107 0.707107 8.65974e-15 -1.76419e-15" mesh="tube_end_effector__configuration_back_arm" material="tube_end_effector__configuration_back_arm_material"/>
+              <geom type="mesh" class="collision" pos="0.2775 5.55112e-17 0.0333" quat="0.707107 0.707107 8.65974e-15 -1.76419e-15" mesh="tube_end_effector__configuration_back_arm" material="tube_end_effector__configuration_back_arm_material"/>
+              <!-- Part belt_cap__configuration_back_arm_2 -->
+              <geom type="mesh" class="visual" pos="-5.32907e-15 0.2775 0.032825" quat="0.5 0.5 0.5 0.5" mesh="belt_cap__configuration_back_arm" material="belt_cap__configuration_back_arm_material"/>
+              <geom type="mesh" class="collision" pos="-5.32907e-15 0.2775 0.032825" quat="0.5 0.5 0.5 0.5" mesh="belt_cap__configuration_back_arm" material="belt_cap__configuration_back_arm_material"/>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+  <asset>
+    <mesh file="main_plate__configuration_back_arm.stl"/>
+    <mesh file="idler_pulley_mirror__configuration_back_arm.stl"/>
+    <mesh file="motor_side_shell_motor_side__configuration_back_arm.stl"/>
+    <mesh file="tube_end_effector__configuration_back_arm.stl"/>
+    <mesh file="input_pulley__1_1.stl"/>
+    <mesh file="secondary_plate__configuration_back_arm.stl"/>
+    <mesh file="tube_end_effector_adapter__configuration_back_arm.stl"/>
+    <mesh file="anti_deflection_support__configuration_back_arm.stl"/>
+    <mesh file="bridge_bracket_to_j3.stl"/>
+    <mesh file="ball_end_effector__configuration_back_arm.stl"/>
+    <mesh file="belt_cap__configuration_back_arm.stl"/>
+    <mesh file="part_4__configuration_back_arm.stl"/>
+    <mesh file="rs02_bridge_bracket_spacer.stl"/>
+    <mesh file="back_mount.stl"/>
+    <mesh file="wrist_v2__configuration_back_arm.stl"/>
+    <mesh file="part_8.stl"/>
+    <mesh file="idler_pulley__configuration_back_arm.stl"/>
+    <mesh file="idler_spacer_mirror__configuration_back_arm.stl"/>
+    <mesh file="motor_side_shell_output_side__configuration_back_arm.stl"/>
+    <mesh file="rs02_sim.stl"/>
+    <mesh file="part_3__configuration_back_arm.stl"/>
+    <mesh file="1_1_belt__configuration__1_1_ratio.stl"/>
+    <mesh file="main_shoulder_bracket.stl"/>
+    <mesh file="1_1_pulley_spacer.stl"/>
+    <mesh file="j3_to_shoulder_support.stl"/>
+    <mesh file="shaft_v2__configuration_back_arm.stl"/>
+    <mesh file="trans_side_shell_output_side__configuration_back_arm.stl"/>
+    <mesh file="wrist_bracket_1__configuration_back_arm.stl"/>
+    <mesh file="idler_spacer__configuration_back_arm.stl"/>
+    <mesh file="trapezoidal_spacer_complidant_side__configuration_back_arm.stl"/>
+    <mesh file="trans_side_shell_motor_side__configuration_back_arm.stl"/>
+    <mesh file="output_pulley__configuration_back_arm.stl"/>
+    <mesh file="wrist_bracket_2__configuration_back_arm.stl"/>
+    <material name="rs02_sim_material" rgba="0.917647 0.917647 0.917647 1"/>
+    <material name="back_mount_material" rgba="0.615686 0.811765 0.929412 1"/>
+    <material name="part_8_material" rgba="0.498039 0.498039 0.498039 1"/>
+    <material name="main_shoulder_bracket_material" rgba="0.647059 0.647059 0.647059 1"/>
+    <material name="bridge_bracket_to_j3_material" rgba="0.615686 0.811765 0.929412 1"/>
+    <material name="rs02_bridge_bracket_spacer_material" rgba="0.615686 0.811765 0.929412 1"/>
+    <material name="j3_to_shoulder_support_material" rgba="0.972549 0.529412 0.00392157 1"/>
+    <material name="idler_pulley_mirror__configuration_back_arm_material" rgba="0.647059 0.647059 0.647059 1"/>
+    <material name="main_plate__configuration_back_arm_material" rgba="0.647059 0.647059 0.647059 1"/>
+    <material name="trans_side_shell_output_side__configuration_back_arm_material" rgba="0.615686 0.811765 0.929412 1"/>
+    <material name="shaft_v2__configuration_back_arm_material" rgba="0.647059 0.647059 0.647059 1"/>
+    <material name="input_pulley__1_1_material" rgba="0.752941 0.752941 0.752941 1"/>
+    <material name="trans_side_shell_motor_side__configuration_back_arm_material" rgba="0.615686 0.811765 0.929412 1"/>
+    <material name="1_1_pulley_spacer_material" rgba="0.972549 0.529412 0.00392157 1"/>
+    <material name="anti_deflection_support__configuration_back_arm_material" rgba="0.615686 0.811765 0.929412 1"/>
+    <material name="idler_spacer_mirror__configuration_back_arm_material" rgba="0.647059 0.647059 0.647059 1"/>
+    <material name="part_4__configuration_back_arm_material" rgba="0.231373 0.380392 0.705882 1"/>
+    <material name="motor_side_shell_output_side__configuration_back_arm_material" rgba="0.615686 0.811765 0.929412 1"/>
+    <material name="motor_side_shell_motor_side__configuration_back_arm_material" rgba="0.615686 0.811765 0.929412 1"/>
+    <material name="idler_spacer__configuration_back_arm_material" rgba="0.647059 0.647059 0.647059 1"/>
+    <material name="output_pulley__configuration_back_arm_material" rgba="0.752941 0.752941 0.752941 1"/>
+    <material name="part_3__configuration_back_arm_material" rgba="0.647059 0.647059 0.647059 1"/>
+    <material name="belt_cap__configuration_back_arm_material" rgba="0.615686 0.811765 0.929412 1"/>
+    <material name="secondary_plate__configuration_back_arm_material" rgba="0.647059 0.647059 0.647059 1"/>
+    <material name="idler_pulley__configuration_back_arm_material" rgba="0.647059 0.647059 0.647059 1"/>
+    <material name="wrist_bracket_1__configuration_back_arm_material" rgba="0.615686 0.811765 0.929412 1"/>
+    <material name="tube_end_effector_adapter__configuration_back_arm_material" rgba="0.647059 0.647059 0.647059 1"/>
+    <material name="ball_end_effector__configuration_back_arm_material" rgba="0.615686 0.811765 0.929412 1"/>
+    <material name="trapezoidal_spacer_complidant_side__configuration_back_arm_material" rgba="0.615686 0.811765 0.929412 1"/>
+    <material name="wrist_v2__configuration_back_arm_material" rgba="0.647059 0.647059 0.647059 1"/>
+    <material name="wrist_bracket_2__configuration_back_arm_material" rgba="0.615686 0.811765 0.929412 1"/>
+    <material name="tube_end_effector__configuration_back_arm_material" rgba="0.901961 0.901961 0.901961 1"/>
+    <material name="1_1_belt__configuration__1_1_ratio_material" rgba="0.301961 0.301961 0.301961 1"/>
+  </asset>
+  <actuator>
+    <motor class="Sim_Arm_Back_1foot_noEE" name="J1" joint="J1"/>
+    <motor class="Sim_Arm_Back_1foot_noEE" name="J2" joint="J2"/>
+    <motor class="Sim_Arm_Back_1foot_noEE" name="J3" joint="J3"/>
+    <motor class="Sim_Arm_Back_1foot_noEE" name="J4" joint="J4"/>
+  </actuator>
+  <equality/>
+</mujoco>

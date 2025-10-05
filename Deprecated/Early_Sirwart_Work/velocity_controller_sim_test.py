@@ -6,15 +6,23 @@ import scipy
 import pynput.keyboard as keyboard
 
 # Config
-urdf_path = 'robot_models/Sim_Arm_4DOF_Mar_25/robot.xml'
+urdf_path = 'robot_models/Sim_Arm_Back_2foot_noEE/robot.xml'
 site_name = 'endeff'
 command_rate = 20
 max_speed = 6
 accel = max_speed*4
 null_speed = 6
 motor_ratios = np.array([-1, -1, 1, -3])
-reachable_sphere_center = np.array([0, 0, 0.115])
-reachable_sphere_radius = 0.8
+
+# Main Arm
+# reachable_sphere_center = np.array([0, 0, 0.115])
+# reachable_sphere_radius = 0.8
+# Back Arm 1 foot
+# reachable_sphere_center = np.array([0, 0.12, 0.0])
+# reachable_sphere_radius = 0.75
+# Back Arm 2 foot
+reachable_sphere_center = np.array([0, 0.12, 0.0])
+reachable_sphere_radius = 1.05
 
 # Load MuJoCo model
 model = mj.MjModel.from_xml_path(urdf_path)
