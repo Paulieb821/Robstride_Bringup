@@ -1,10 +1,11 @@
 <?xml version="1.0" ?>
 <!-- Generated using onshape-to-robot -->
 <!-- Onshape https://cad.onshape.com/documents/89c2000dd1a2e6c0b43141b5/w/011f2e3700106f95fa6aa43d/e/3c9bddcc473df1d7f4c42780 -->
-<mujoco model="Sim_Arm_4DOF_May_25">
+<mujoco model="Sim_Arm_4DOF_Nov_08">
   <compiler angle="radian" meshdir="assets" autolimits="true"/>
+  <option gravity="0 0 0" />
   <default>
-    <default class="Sim_Arm_4DOF_May_25">
+    <default class="Sim_Arm_4DOF_Nov_08">
       <joint frictionloss="0.1" armature="0.005"/>
       <default class="visual">
         <geom type="mesh" contype="0" conaffinity="0" group="2"/>
@@ -30,7 +31,8 @@
 
   <worldbody>
     <!-- Link rs01_sim -->
-    <body name="root" pos="0 0 0" quat="1 0 0 0" childclass="Sim_Arm_4DOF_May_25">
+    <geom type="box" pos="0 -.9 -.11" size="1 1 .05" contype="1" conaffinity="1"/>
+    <body name="root" pos="0 0 0" quat="1 0 0 0" childclass="Sim_Arm_4DOF_Nov_08">
       <inertial pos="-1.71974e-05 -0.123476 -0.322704" mass="3.60669" fullinertia="0.121348 0.108623 0.0199465 5.91759e-06 1.59822e-05 -0.0365797"/>
       <!-- Part head_mount_v2 -->
       <geom type="mesh" class="visual" pos="-6.93889e-18 -0.025 -0.5455" quat="0.707107 0 0 0.707107" mesh="head_mount_v2" material="head_mount_v2_material"/>
@@ -574,10 +576,10 @@
     <material name="part_1__6_material" rgba="1 1 1 1"/>
   </asset>
   <actuator>
-    <motor class="Sim_Arm_4DOF_May_25" name="J1" joint="J1"/>
-    <motor class="Sim_Arm_4DOF_May_25" name="J2" joint="J2"/>
-    <motor class="Sim_Arm_4DOF_May_25" name="J3" joint="J3"/>
-    <motor class="Sim_Arm_4DOF_May_25" name="J4" joint="J4"/>
+    <motor class="Sim_Arm_4DOF_Nov_08" name="J1" joint="J1"/>
+    <motor class="Sim_Arm_4DOF_Nov_08" name="J2" joint="J2"/>
+    <motor class="Sim_Arm_4DOF_Nov_08" name="J3" joint="J3"/>
+    <motor class="Sim_Arm_4DOF_Nov_08" name="J4" joint="J4"/>
   </actuator>
   <equality/>
 </mujoco>
